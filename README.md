@@ -5,17 +5,18 @@ AggroGlow: Nameplate Threat adds a glow around each engaged enemy's nameplate th
 
 Features
 - Three glows:
-  - Steady green (stable): the tank has aggro, safely.
-  - Flashing orange (unstable): the tank has aggro, but someone is at or above your threshold (default 80%) of pulling it.
-  - Flashing red (no threat): the enemy is engaged with you or your group but isn't on the tank.
+  - Green (stable): the tank has aggro, safely.
+  - Orange (unstable): the tank has aggro, but someone is at or above your threshold (default 80%) of pulling it.
+  - Red (no threat): the enemy is engaged with you or your group but isn't on the tank.
+- Each glow can be shown or hidden, flashing or steady, with its own strength and color (by default stable is steady, the other two flash).
 - Works on every enemy you or your party are fighting, including ones a party member pulled.
 - Whose aggro: Auto (your pet when it's out, else you), Me, or My pet.
 - Unstable threshold from 50% to 100% of pulling.
-- Optional "!" icon and threat % beside the nameplate.
+- Optional "!" icon and threat % beside the nameplate; the % can also show while aggro is stable (how close the next person is to pulling it).
 - Only show in a party or raid (or while your pet tanks).
 
 Settings and commands
-- /ag: settings window (whose aggro, glow strength, flash speed, unstable threshold, three colors, what to show, previews on your target).
+- /ag: settings window (whose aggro to show; show, flash, strength and color per glow; flash speed; unstable threshold; display options; previews on your target).
 - /ag debug: what threat data the game gives addons right now.
 - Esc > Options > AddOns > Aggro Glow.
 
@@ -28,6 +29,7 @@ Known limits
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
+- 3.5.0: Cleaner settings window; choose which glows flash, each with its own strength; threat % can also show while aggro is stable.
 - 3.4.1: Logo in the AddOns list.
 - 3.4.0: Pet tanking: Whose aggro to show (Auto / Me / My pet).
 - 3.3.0: Unstable is based on how close your group is to pulling (threshold, default 80%).

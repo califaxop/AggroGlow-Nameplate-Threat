@@ -9,47 +9,6 @@ local function Label(parent, text, template)
   return fs
 end
 
-local function Header(parent, text, anchor, y)
-  local h = Label(parent, text, "GameFontNormal")
-  h:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, y or -16)
-  return h
-end
-
--- Slider -------------------------------------------------------------------
-local function Slider(parent, label, minV, maxV, step, get, set, fmt, anchor)
-  local text = Label(parent, "", "GameFontHighlight")
-  text:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -10)
-  local s = CreateFrame("Slider", nil, parent, "BackdropTemplate")
-  s:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -6)
-  s:SetSize(240, 16)
-  s:SetOrientation("HORIZONTAL")
-  s:SetMinMaxValues(minV, maxV); s:SetValueStep(step); s:SetObeyStepOnDrag(true)
-  s:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
-    edgeFile = "Interface\\Buttons\\UI-SliderBar-Border", tile = true, tileSize = 8, edgeSize = 8,
-    insets = { left = 3, right = 3, top = 6, bottom = 6 } })
-  s:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
-  s:EnableMouseWheel(true)
-  s:SetScript("OnMouseWheel", function(self, d) self:SetValue(self:GetValue() + d * step) end)
-  s:SetScript("OnValueChanged", function(_, v)
-    set(v); text:SetText(label .. ": " .. fmt(v)); Changed()
-  end)
-  s.Refresh = function() s:SetValue(get()); text:SetText(label .. ": " .. fmt(get())) end
-  s.bottom = s
-  return s
-end
-
--- Checkbox -----------------------------------------------------------------
-local function Check(parent, label, key, anchor, x)
-  local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-  cb:SetSize(24, 24)
-  cb:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x or 0, -4)
-  local l = Label(parent, label, "GameFontHighlight")
-  l:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-  cb:SetScript("OnClick", function(self) ns.db[key] = self:GetChecked() and true or false; Changed() end)
-  cb.Refresh = function() cb:SetChecked(ns.db[key]) end
-  return cb
-end
-
 -- Color swatch -------------------------------------------------------------
 local function OpenColorPicker(color, onChange)
   local r, g, b = color[1], color[2], color[3]
@@ -77,14 +36,11 @@ local function OpenColorPicker(color, onChange)
   end
 end
 
-local function Swatch(parent, label, key, anchor)
+local function Swatch(parent, key)
   local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
-  b:SetSize(20, 20)
-  b:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -6)
+  b:SetSize(18, 18)
   b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-  b:SetBackdropBorderColor(0.8, 0.8, 0.8)
-  local l = Label(parent, label, "GameFontHighlight")
-  l:SetPoint("LEFT", b, "RIGHT", 8, 0)
+  b:SetBackdropBorderColor(0.75, 0.75, 0.75)
   b.Refresh = function()
     local c = ns.db.colors[key]
     b:SetBackdropColor(c[1], c[2], c[3])
@@ -92,6 +48,11 @@ local function Swatch(parent, label, key, anchor)
   b:SetScript("OnClick", function()
     OpenColorPicker(ns.db.colors[key], function() b.Refresh(); Changed() end)
   end)
+  b:SetScript("OnEnter", function(self)
+    self:SetBackdropBorderColor(1, 0.82, 0)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText("Click to change the color"); GameTooltip:Show()
+  end)
+  b:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.75, 0.75, 0.75); GameTooltip:Hide() end)
   return b
 end
 
@@ -102,93 +63,210 @@ local function Button(parent, text, width, onClick)
 end
 
 ---------------------------------------------------------------------------
+-- Building blocks (placed by offset from the panel's top-left)
+---------------------------------------------------------------------------
+local PAD = 20
+
+local function At(w, parent, x, y) w:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y); return w end
+
+-- a gold section title with a thin line under it
+local function Section(parent, text, y)
+  At(Label(parent, text, "GameFontNormal"), parent, PAD, y)
+  local line = parent:CreateTexture(nil, "ARTWORK")
+  line:SetColorTexture(1, 1, 1, 0.12); line:SetHeight(1)
+  line:SetPoint("TOPLEFT", parent, "TOPLEFT", PAD, y - 17)
+  line:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -PAD, y - 17)
+  return y - 28
+end
+
+local function Note(parent, text, x, y, width)
+  local n = At(Label(parent, text, "GameFontDisableSmall"), parent, x, y)
+  n:SetWidth(width or 380); n:SetJustifyH("LEFT")
+  return n
+end
+
+-- slider with its name on the left above it and the value on the right
+local function Slider(parent, label, x, y, width, minV, maxV, step, get, set, fmt)
+  local name = label and At(Label(parent, label, "GameFontHighlightSmall"), parent, x, y)
+  local value = Label(parent, "", "GameFontHighlightSmall")
+  local s = CreateFrame("Slider", nil, parent, "BackdropTemplate")
+  s:SetPoint("TOPLEFT", parent, "TOPLEFT", x, label and (y - 16) or y)
+  s:SetSize(width, 16)
+  s:SetOrientation("HORIZONTAL")
+  s:SetMinMaxValues(minV, maxV); s:SetValueStep(step); s:SetObeyStepOnDrag(true)
+  s:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
+    edgeFile = "Interface\\Buttons\\UI-SliderBar-Border", tile = true, tileSize = 8, edgeSize = 8,
+    insets = { left = 3, right = 3, top = 6, bottom = 6 } })
+  s:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+  if label then value:SetPoint("BOTTOMRIGHT", s, "TOPRIGHT", 0, 2)
+  else value:SetPoint("LEFT", s, "RIGHT", 6, 0) end
+  s:EnableMouseWheel(true)
+  s:SetScript("OnMouseWheel", function(self, d) self:SetValue(self:GetValue() + d * step) end)
+  s:SetScript("OnValueChanged", function(_, v)
+    set(v); value:SetText(fmt(v)); Changed()
+  end)
+  s.Refresh = function() s:SetValue(get()); value:SetText(fmt(get())) end
+  s.SetActive = function(on)
+    s:SetEnabled(on); s:SetAlpha(on and 1 or 0.4); value:SetAlpha(on and 1 or 0.4)
+  end
+  return s
+end
+
+-- checkbox; get/set default to a top-level setting
+local function Check(parent, label, x, y, get, set)
+  local cb = At(CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate"), parent, x, y)
+  cb:SetSize(24, 24)
+  if label then
+    cb.text = Label(parent, label, "GameFontHighlight")
+    cb.text:SetPoint("LEFT", cb, "RIGHT", 2, 1)
+  end
+  cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false); Changed() end)
+  cb.Refresh = function() cb:SetChecked(get()) end
+  cb.SetActive = function(on)
+    cb:SetEnabled(on)
+    if cb.text then cb.text:SetFontObject(on and "GameFontHighlight" or "GameFontDisable") end
+  end
+  return cb
+end
+local function Setting(key) return function() return ns.db[key] end, function(v) ns.db[key] = v end end
+
+-- "< value >": a selector that looks adjustable; click the arrows or the box (right-click goes back)
+local function Selector(parent, x, y, width, options, get, set)
+  local f = At(CreateFrame("Frame", nil, parent), parent, x, y)
+  f:SetSize(width, 26)
+  local function arrow(dir)
+    local b = CreateFrame("Button", nil, f)
+    b:SetSize(26, 26)
+    local base = dir < 0 and "Interface\\Buttons\\UI-SpellbookIcon-PrevPage-" or "Interface\\Buttons\\UI-SpellbookIcon-NextPage-"
+    b:SetNormalTexture(base .. "Up"); b:SetPushedTexture(base .. "Down"); b:SetDisabledTexture(base .. "Disabled")
+    b:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    return b
+  end
+  local prev, next = arrow(-1), arrow(1)
+  prev:SetPoint("LEFT"); next:SetPoint("RIGHT")
+  local box = CreateFrame("Button", nil, f, "BackdropTemplate")
+  box:SetPoint("LEFT", prev, "RIGHT", 2, 0); box:SetPoint("RIGHT", next, "LEFT", -2, 0); box:SetHeight(24)
+  box:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+  box:SetBackdropColor(0, 0, 0, 0.45); box:SetBackdropBorderColor(1, 1, 1, 0.2)
+  box:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  local text = box:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+  text:SetPoint("LEFT", 8, 0); text:SetPoint("RIGHT", -8, 0)
+  box:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(1, 0.82, 0, 0.8) end)
+  box:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(1, 1, 1, 0.2) end)
+  local function step(d)
+    local i = 1
+    for k, o in ipairs(options) do if o[1] == get() then i = k end end
+    i = (i - 1 + d) % #options + 1
+    set(options[i][1]); f.Refresh(); Changed()
+  end
+  prev:SetScript("OnClick", function() step(-1) end)
+  next:SetScript("OnClick", function() step(1) end)
+  box:SetScript("OnClick", function(_, mouse) step(mouse == "RightButton" and -1 or 1) end)
+  f.Refresh = function()
+    for _, o in ipairs(options) do if o[1] == get() then text:SetText(o[2]) end end
+  end
+  return f
+end
+
+local function pctFmt(v) return math.floor(v * 100 + 0.5) .. "%" end
+
+---------------------------------------------------------------------------
 -- Panel
 ---------------------------------------------------------------------------
+local STATES = {
+  { "aggro",    "Stable",    "The tank has aggro, safely." },
+  { "unstable", "Unstable",  "The tank has aggro, but someone is close to pulling it." },
+  { "nothreat", "No threat", "Engaged with you or your group, but not on the tank." },
+}
+
 local function BuildPanel(panel)
   local refreshers = {}
   local function track(w) refreshers[#refreshers + 1] = w; return w end
 
-  local title = Label(panel, "Aggro Glow", "GameFontNormalLarge")
-  title:SetPoint("TOPLEFT", 16, -16)
+  At(Label(panel, "Aggro Glow", "GameFontNormalLarge"), panel, PAD, -18)
+  Note(panel, "Threat glows on enemy nameplates.", PAD, -40)
 
-  -- Glow
-  local h1 = Header(panel, "Glow", title, -14)
-  local lossA = track(Slider(panel, "Flashing glow strength", 0.1, 1, 0.05,
-    function() return ns.db.glowAlpha end, function(v) ns.db.glowAlpha = v end,
-    function(v) return math.floor(v * 100 + 0.5) .. "%" end, h1))
-  local aggroA = track(Slider(panel, "Aggro glow strength", 0.05, 1, 0.05,
-    function() return ns.db.aggroAlpha end, function(v) ns.db.aggroAlpha = v end,
-    function(v) return math.floor(v * 100 + 0.5) .. "%" end, lossA))
-  local speed = track(Slider(panel, "Flash speed", 0.15, 1, 0.05,
-    function() return ns.db.flashSpeed end, function(v) ns.db.flashSpeed = v end,
-    function(v) return format("%.2fs", v) end, aggroA))
-  local thr = track(Slider(panel, "Unstable when someone reaches", 50, 100, 5,
-    function() return ns.db.unstableAt end, function(v) ns.db.unstableAt = math.floor(v + 0.5) end,
-    function(v) return math.floor(v + 0.5) .. "% of pulling it" end, speed))
+  -- Whose aggro ------------------------------------------------------------
+  local y = Section(panel, "Choose whose aggro to show", -66)
+  track(Selector(panel, PAD, y, 330,
+    { { "auto", "Auto: my pet when it's out, else me" }, { "me", "Me" }, { "pet", "My pet" } },
+    function() return ns.db.tank or "auto" end, function(v) ns.db.tank = v end))
+  Note(panel, "Click the arrows or the box to change it. With your pet as the tank, you and your group count as \"someone close\".", PAD, y - 32)
 
-  -- Colors
-  local h2 = Header(panel, "Colors", thr, -22)
-  local c1 = track(Swatch(panel, "Stable: you have aggro", "aggro", h2))
-  local c2 = track(Swatch(panel, "Unstable: someone is close (flashing)", "unstable", c1))
-  local c3 = track(Swatch(panel, "No threat: it's not on you (flashing)", "nothreat", c2))
-
-  -- Whose aggro
-  local hT = Header(panel, "Whose aggro to show", c3, -16)
-  local TANKS = { { "auto", "Auto: my pet when it's out, else me" }, { "me", "Me" }, { "pet", "My pet" } }
-  local tankBtn = Button(panel, "", 260, nil)
-  tankBtn:SetPoint("TOPLEFT", hT, "BOTTOMLEFT", 0, -6)
-  tankBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-  tankBtn.Refresh = function()
-    for _, t in ipairs(TANKS) do if t[1] == (ns.db.tank or "auto") then tankBtn:SetText(t[2]) end end
+  -- Glows ------------------------------------------------------------------
+  y = Section(panel, "Glows", y - 70)
+  local COL_SHOW, COL_FLASH, COL_STR = 196, 246, 296
+  At(Label(panel, "Show", "GameFontDisableSmall"), panel, COL_SHOW, y)
+  At(Label(panel, "Flash", "GameFontDisableSmall"), panel, COL_FLASH, y)
+  At(Label(panel, "Strength", "GameFontDisableSmall"), panel, COL_STR, y)
+  y = y - 16
+  for _, s in ipairs(STATES) do
+    local key = s[1]
+    local function st() return ns.db.states[key] end
+    local sw = track(At(Swatch(panel, key), panel, PAD, y - 3))
+    local name = Label(panel, s[2], "GameFontHighlight")
+    name:SetPoint("LEFT", sw, "RIGHT", 8, 0)
+    -- tooltip on the name explains the state
+    local hit = CreateFrame("Frame", nil, panel)
+    hit:SetPoint("TOPLEFT", name, "TOPLEFT", -2, 2); hit:SetPoint("BOTTOMRIGHT", name, "BOTTOMRIGHT", 2, -2)
+    hit:SetScript("OnEnter", function(self)
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(s[2]); GameTooltip:AddLine(s[3], 1, 1, 1, true); GameTooltip:Show()
+    end)
+    hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    local str = track(Slider(panel, nil, COL_STR, y - 4, 90, 0.05, 1, 0.05,
+      function() return st().alpha end, function(v) st().alpha = v end, pctFmt))
+    local flash = track(Check(panel, nil, COL_FLASH + 2, y,
+      function() return st().flash end, function(v) st().flash = v end))
+    local show = track(Check(panel, nil, COL_SHOW + 2, y,
+      function() return st().show end, function(v)
+        st().show = v; flash.SetActive(v); str.SetActive(v)
+      end))
+    local refresh = show.Refresh
+    show.Refresh = function() refresh(); flash.SetActive(st().show); str.SetActive(st().show) end
+    y = y - 30
   end
-  tankBtn:SetScript("OnClick", function(_, mouse)
-    local i = 1
-    for k, t in ipairs(TANKS) do if t[1] == (ns.db.tank or "auto") then i = k end end
-    i = i + (mouse == "RightButton" and -1 or 1)
-    if i < 1 then i = #TANKS elseif i > #TANKS then i = 1 end
-    ns.db.tank = TANKS[i][1]; tankBtn.Refresh(); Changed()
-  end)
-  track(tankBtn)
-  local tNote = Label(panel, "With your pet as the tank, the glows show your pet's aggro: you and your group count as \"someone close\".", "GameFontDisableSmall")
-  tNote:SetPoint("TOPLEFT", tankBtn, "BOTTOMLEFT", 0, -6); tNote:SetWidth(340); tNote:SetJustifyH("LEFT")
 
-  -- Show
-  local h3 = Header(panel, "Show", tNote, -16)
-  local k0 = track(Check(panel, "Only show in a party or raid (or when my pet tanks)", "onlyInGroup", h3))
-  local k1 = track(Check(panel, "Steady glow when your aggro is stable", "showAggroGlow", k0))
-  local k2 = track(Check(panel, "Separate glow when your aggro is unstable", "showUnstable", k1))
-  local k3 = track(Check(panel, "\"!\" icon while aggro isn't stable", "showIcon", k2))
-  local k4 = track(Check(panel, "Your threat % beside the nameplate", "showPercent", k3))
+  track(Slider(panel, "Flash speed", PAD, y - 6, 180, 0.15, 1, 0.05,
+    function() return ns.db.flashSpeed end, function(v) ns.db.flashSpeed = v end,
+    function(v) return format("%.2fs per flash", v) end))
+  track(Slider(panel, "Unstable at", 220, y - 6, 180, 50, 100, 5,
+    function() return ns.db.unstableAt end, function(v) ns.db.unstableAt = math.floor(v + 0.5) end,
+    function(v) return math.floor(v + 0.5) .. "% of pulling" end))
 
-  -- Preview: show a state on your target's nameplate
+  -- Display ----------------------------------------------------------------
+  y = Section(panel, "Display", y - 56)
+  track(Check(panel, "Only in a party or raid (or when my pet tanks)", PAD, y, Setting("onlyInGroup")))
+  track(Check(panel, "\"!\" icon while aggro isn't stable", PAD, y - 26, Setting("showIcon")))
+  local stablePct = Check(panel, "Also while aggro is stable", PAD + 24, y - 78, Setting("showPercentStable"))
+  local pct = track(Check(panel, "Threat % beside the nameplate", PAD, y - 52, function() return ns.db.showPercent end,
+    function(v) ns.db.showPercent = v; stablePct.SetActive(v) end))
+  track(stablePct)
+  local pr = pct.Refresh
+  pct.Refresh = function() pr(); stablePct.SetActive(ns.db.showPercent) end
+  Note(panel, "While the tank holds aggro, the % shows how close the next person is to pulling it.", PAD + 52, y - 102, 340)
+
+  -- Preview ----------------------------------------------------------------
+  y = Section(panel, "Preview on your target", y - 138)
   local buttons = {}
   local MODES = { { "secure", "Stable" }, { "insecure", "Unstable" }, { "lost", "No threat" } }
   local function SetPreview(mode)
     ns.preview = (ns.preview ~= mode) and mode or nil
-    for i, m in ipairs(MODES) do
-      buttons[i]:SetText(ns.preview == m[1] and "Stop" or ("Preview: " .. m[2]))
-    end
+    for i, m in ipairs(MODES) do buttons[i]:SetText(ns.preview == m[1] and "Stop" or m[2]) end
     if ns.preview then ns.Print("preview on: target an enemy with its nameplate visible.") end
     Changed()
   end
   for i, m in ipairs(MODES) do
-    local b = Button(panel, "Preview: " .. m[2], 112, function() SetPreview(m[1]) end)
-    if i == 1 then b:SetPoint("TOPLEFT", k4, "BOTTOMLEFT", 0, -16)
-    else b:SetPoint("LEFT", buttons[i - 1], "RIGHT", 6, 0) end
-    buttons[i] = b
+    buttons[i] = At(Button(panel, m[2], 100, function() SetPreview(m[1]) end), panel, PAD + (i - 1) * 106, y)
   end
   panel:HookScript("OnHide", function() if ns.preview then SetPreview(ns.preview) end end)
-  local pAggro = buttons[1]
 
   local reset = Button(panel, "Reset to defaults", 140, function()
     ns.ResetDB()
     for _, w in ipairs(refreshers) do w.Refresh() end
     Changed()
   end)
-  reset:SetPoint("TOPLEFT", pAggro, "BOTTOMLEFT", 0, -8)
-
-  local hint = Label(panel, "/ag debug shows what threat data the game gives addons.", "GameFontDisableSmall")
-  hint:SetPoint("TOPLEFT", reset, "BOTTOMLEFT", 0, -12)
+  At(reset, panel, PAD, y - 40)
+  Note(panel, "/ag debug shows what threat data the game gives addons.", PAD + 150, y - 45, 230)
 
   panel:HookScript("OnShow", function() for _, w in ipairs(refreshers) do w.Refresh() end end)
   return panel
@@ -218,7 +296,7 @@ end
 function ns.OpenOptions()
   if not window then
     window = CreateFrame("Frame", "AggroGlowOptionsWindow", UIParent, "BackdropTemplate")
-    window:SetSize(400, 810)
+    window:SetSize(460, 660)
     window:SetPoint("CENTER")
     window:SetFrameStrata("DIALOG")
     window:SetBackdrop({ bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",

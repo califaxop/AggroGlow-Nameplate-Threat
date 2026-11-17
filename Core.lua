@@ -6,20 +6,23 @@ ns.isSecret = issecretvalue or function() return false end
 function ns.Readable(v) return v ~= nil and not ns.isSecret(v) end
 
 ns.DEFAULTS = {
-  glowAlpha     = 0.8,   -- strength of the flashing glows (unstable / no threat)
-  aggroAlpha    = 0.6,   -- strength of the steady "stable aggro" glow
-  showAggroGlow = true,  -- steady glow on enemies you hold securely
-  showUnstable  = true,  -- separate flashing glow while your aggro is unstable
-  unstableAt    = 80,    -- unstable once someone has this % of the threat needed to pull it off you
-  showIcon      = false, -- "!" while your aggro isn't stable
-  showPercent   = false, -- your threat % beside the nameplate
-  onlyInGroup   = false, -- only glow while you're in a party or raid (or your pet is the tank)
-  tank          = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
-  flashSpeed    = 0.35,  -- seconds per flash (no threat flashes a bit faster)
+  -- the three glows: shown or not, flashing or steady, and how strong
+  states = {
+    aggro    = { show = true, flash = false, alpha = 0.6 },  -- stable: the tank has aggro, safely
+    unstable = { show = true, flash = true,  alpha = 0.8 },  -- unstable: someone is close to pulling it
+    nothreat = { show = true, flash = true,  alpha = 0.8 },  -- no threat: engaged, but not on the tank
+  },
+  unstableAt        = 80,    -- unstable once someone has this % of the threat needed to pull it off you
+  showIcon          = false, -- "!" while aggro isn't stable
+  showPercent       = false, -- threat % beside the nameplate
+  showPercentStable = false, -- ...also while aggro is stable
+  onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
+  tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
+  flashSpeed        = 0.35,  -- seconds per flash (no threat flashes a bit faster, stable a bit slower)
   colors = {
-    aggro    = { 0.35, 1.00, 0.45 },  -- stable: you have aggro, safely
-    unstable = { 1.00, 0.50, 0.05 },  -- unstable: you have aggro, someone is close
-    nothreat = { 1.00, 0.15, 0.10 },  -- no threat: engaged, but it isn't on you
+    aggro    = { 0.35, 1.00, 0.45 },  -- stable
+    unstable = { 1.00, 0.50, 0.05 },  -- unstable
+    nothreat = { 1.00, 0.15, 0.10 },  -- no threat
   },
 }
 
@@ -37,21 +40,36 @@ function ns.Dbg(...) if ns.debug then print("|cffff7744AG|r", ...) end end
 
 function ns.LoadDB()
   AggroGlowDB = AggroGlowDB or {}
-  local v = AggroGlowDB.version
-  if v ~= 3 and v ~= 4 then wipe(AggroGlowDB) end -- older designs: start fresh
-  if v == 3 and AggroGlowDB.colors then
+  local db = AggroGlowDB
+  local v = db.version
+  if v ~= 3 and v ~= 4 and v ~= 5 then wipe(db) end -- older designs: start fresh
+  if v == 3 and db.colors then
     -- 3 -> 4: the old orange "not stable" colour becomes the "unstable" colour; settings kept
-    AggroGlowDB.colors.unstable = AggroGlowDB.colors.unstable or AggroGlowDB.colors.loss
-    AggroGlowDB.colors.loss = nil
+    db.colors.unstable = db.colors.unstable or db.colors.loss
+    db.colors.loss = nil
   end
-  AggroGlowDB.version = 4
-  for k, v in pairs(ns.DEFAULTS) do
-    if AggroGlowDB[k] == nil then AggroGlowDB[k] = Copy(v) end
+  if (v == 3 or v == 4) and db.states == nil then
+    -- 4 -> 5: one show / flash / strength setting per glow
+    db.states = {
+      aggro    = { show = db.showAggroGlow ~= false, flash = false, alpha = db.aggroAlpha or 0.6 },
+      unstable = { show = db.showUnstable ~= false, flash = true, alpha = db.glowAlpha or 0.8 },
+      nothreat = { show = true, flash = true, alpha = db.glowAlpha or 0.8 },
+    }
+    db.showAggroGlow, db.showUnstable, db.aggroAlpha, db.glowAlpha = nil, nil, nil, nil
   end
-  for k, v in pairs(ns.DEFAULTS.colors) do
-    if AggroGlowDB.colors[k] == nil then AggroGlowDB.colors[k] = Copy(v) end
+  db.version = 5
+  for k, d in pairs(ns.DEFAULTS) do
+    if db[k] == nil then db[k] = Copy(d) end
   end
-  ns.db = AggroGlowDB
+  for _, group in ipairs({ "colors", "states" }) do
+    for k, d in pairs(ns.DEFAULTS[group]) do
+      if db[group][k] == nil then db[group][k] = Copy(d) end
+      if group == "states" then
+        for f, x in pairs(d) do if db.states[k][f] == nil then db.states[k][f] = x end end
+      end
+    end
+  end
+  ns.db = db
 end
 
 function ns.ResetDB()

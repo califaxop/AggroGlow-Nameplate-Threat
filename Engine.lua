@@ -14,7 +14,7 @@ local function UpdateUnit(unit)
   -- Preview mode: show a look ("secure" or "lost") on your target's nameplate.
   if ns.preview then
     local isTarget = UnitIsUnit(unit, "target")
-    if ns.Readable(isTarget) and isTarget then st = { kind = ns.preview, pct = 42 } end
+    if ns.Readable(isTarget) and isTarget then st = { kind = ns.preview, pct = 42, closest = (ns.preview == "secure") and 35 or 86 } end
   end
   V.Render(plate, st)
 end
@@ -58,7 +58,7 @@ end)
 ---------------------------------------------------------------------------
 -- Slash commands
 ---------------------------------------------------------------------------
-local TOGGLES = { icon = "showIcon", percent = "showPercent", aggro = "showAggroGlow" }
+local TOGGLES = { icon = "showIcon", percent = "showPercent" }
 
 SLASH_AGGROGLOW1 = "/ag"
 SLASH_AGGROGLOW2 = "/aggroglow"
@@ -72,8 +72,9 @@ SlashCmdList.AGGROGLOW = function(msg)
   elseif TOGGLES[cmd] then
     db[TOGGLES[cmd]] = not db[TOGGLES[cmd]]
     ns.Print(cmd .. " " .. (db[TOGGLES[cmd]] and "on" or "off"))
-  elseif cmd == "alpha" and tonumber(arg) then
-    db.glowAlpha = math.max(0.1, math.min(1, tonumber(arg))); ns.Print("glow strength " .. db.glowAlpha)
+  elseif cmd == "aggro" then
+    db.states.aggro.show = not db.states.aggro.show
+    ns.Print("stable glow " .. (db.states.aggro.show and "on" or "off"))
   elseif cmd == "debug" then
     ns.debug = not ns.debug
     ns.Print("debug " .. (ns.debug and "ON" or "OFF"))
@@ -94,7 +95,7 @@ SlashCmdList.AGGROGLOW = function(msg)
         "| hidden threat % checks:", ns.curveState)
     end
   else
-    ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag alpha <0.1-1>  -  /ag debug")
+    ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag debug")
     return
   end
   UpdateAll()

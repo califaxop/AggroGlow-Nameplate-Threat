@@ -1,9 +1,10 @@
 -- Nameplate Renderer: a separate indicator anchored to Blizzard's nameplate.
 -- Blizzard's health bar is never changed. The glow reuses the nameplate's own
 -- selection-border art (copied, tinted), so it matches the game's look and lines up exactly.
---   stable    : steady, subtle  -> you have aggro, safely
---   unstable  : flashing orange -> you have aggro, but someone is close to taking it
---   no threat : flashing red    -> engaged with you or your party, but it isn't on you
+--   stable    : green  -> the tank has aggro, safely
+--   unstable  : orange -> the tank has aggro, but someone is close to taking it
+--   no threat : red    -> engaged with you or your party, but it isn't on the tank
+-- Each glow can be shown or not, flashing or steady, at its own strength (settings).
 local _, ns = ...
 local V = {}
 ns.Renderer = V
@@ -142,13 +143,9 @@ local function Create(plate)
 
   f:SetAllPoints(bar)
 
-  -- stable: steady
-  f.aggro = CreateFrame("Frame", nil, f)
-  f.aggro:SetAllPoints()
-  f.aggroGlow = MakeGlow(f.aggro, bar)
-
-  f.unstable = MakeFlash(f, bar)  -- unstable: flashing
-  f.nothreat = MakeFlash(f, bar)  -- no threat: flashing, faster
+  f.aggro    = MakeFlash(f, bar)  -- stable
+  f.unstable = MakeFlash(f, bar)  -- unstable
+  f.nothreat = MakeFlash(f, bar)  -- no threat
 
   -- hidden-value mode: one unstable glow per group member, each switched on by the client
   -- when *that* member's hidden threat % reaches the threshold; all inside a holder that the
@@ -167,7 +164,7 @@ local function Create(plate)
   f.pct = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.pct:SetPoint("RIGHT", bar, "LEFT", -6, 0)
 
-  f.aggro:Hide(); f.pct:Hide()
+  f.pct:Hide()
   return f
 end
 
@@ -179,17 +176,19 @@ local function StyleFlash(fl, c, alpha, speed, showIcon)
 end
 
 local function Style(f)
-  local db = ns.db
-  TintGlow(f.aggroGlow, db.colors.aggro, db.aggroAlpha)
-  StyleFlash(f.unstable, db.colors.unstable, db.glowAlpha, db.flashSpeed, db.showIcon)
-  StyleFlash(f.nothreat, db.colors.nothreat, db.glowAlpha, db.flashSpeed * 0.7, db.showIcon)
-  for _, g in ipairs(f.gates) do StyleFlash(g.flash, db.colors.unstable, db.glowAlpha, db.flashSpeed, db.showIcon) end
+  local db, st = ns.db, ns.db.states
+  StyleFlash(f.aggro, db.colors.aggro, st.aggro.alpha, db.flashSpeed * 1.5, false)
+  StyleFlash(f.unstable, db.colors.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon)
+  StyleFlash(f.nothreat, db.colors.nothreat, st.nothreat.alpha, db.flashSpeed * 0.7, db.showIcon)
+  for _, g in ipairs(f.gates) do StyleFlash(g.flash, db.colors.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon) end
 end
 
-local function ShowFlash(fl, on)
+-- on: the glow is visible; flashing: it pulses (else it stays steady)
+local function ShowFlash(fl, on, flashing)
   fl.holder:SetShown(on)
-  if on and not fl.anim:IsPlaying() then fl.anim:Play()
-  elseif not on and fl.anim:IsPlaying() then fl.anim:Stop() end
+  local pulse = on and flashing
+  if pulse and not fl.anim:IsPlaying() then fl.anim:Play()
+  elseif not pulse and fl.anim:IsPlaying() then fl.anim:Stop() end
 end
 
 local function HideGates(f)
@@ -198,7 +197,7 @@ local function HideGates(f)
 end
 
 local function HideAll(f)
-  f.aggro:Hide(); ShowFlash(f.unstable, false); ShowFlash(f.nothreat, false); f.pct:Hide()
+  ShowFlash(f.aggro, false); ShowFlash(f.unstable, false); ShowFlash(f.nothreat, false); f.pct:Hide()
   HideGates(f)
 end
 
@@ -207,10 +206,10 @@ function V.Render(plate, state)
   local f = indicators[plate]
   if not f then f = Create(plate); indicators[plate] = f end
   Style(f)
-  local db = ns.db
+  local db, st = ns.db, ns.db.states
   local kind = state and state.kind or "none"
 
-  f.aggro:SetAlpha(1); f.unstable.holder:SetAlpha(1); f.nothreat.holder:SetAlpha(1)
+  f.aggro.holder:SetAlpha(1); f.unstable.holder:SetAlpha(1); f.nothreat.holder:SetAlpha(1)
 
   if kind == "none" then HideAll(f); return end
 
@@ -220,25 +219,25 @@ function V.Render(plate, state)
     local t = state.isTanking
     ShowFlash(f.unstable, false)
     if f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
-      f.aggro:SetShown(db.showAggroGlow)
-      f.aggro:SetAlphaFromBoolean(t, 1, 0)
-      ShowFlash(f.nothreat, true)
+      ShowFlash(f.aggro, st.aggro.show, st.aggro.flash)
+      f.aggro.holder:SetAlphaFromBoolean(t, 1, 0)
+      ShowFlash(f.nothreat, st.nothreat.show, st.nothreat.flash)
       f.nothreat.holder:SetAlphaFromBoolean(t, 0, 1)
       -- unstable from party members' hidden threat % (if the client supports it)
       local others = state.others or {}
-      if db.showUnstable and #others > 0 and ns.curveState ~= "unsupported" then
+      if st.unstable.show and #others > 0 and ns.curveState ~= "unsupported" then
         f.hidTank:Show()
         f.hidTank:SetAlphaFromBoolean(t, 1, 0)
         for i, g in ipairs(f.gates) do
           local p = others[i]
-          if p ~= nil and GateFromHiddenPct(g.frame, p) then ShowFlash(g.flash, true)
+          if p ~= nil and GateFromHiddenPct(g.frame, p) then ShowFlash(g.flash, true, st.unstable.flash)
           else ShowFlash(g.flash, false) end
         end
       else
         HideGates(f)
       end
     else
-      f.aggro:Hide(); ShowFlash(f.nothreat, false); HideGates(f)
+      ShowFlash(f.aggro, false); ShowFlash(f.nothreat, false); HideGates(f)
     end
     f.pct:Hide()
     return
@@ -246,16 +245,24 @@ function V.Render(plate, state)
 
   -- readable values: three states
   HideGates(f)
-  if kind == "insecure" and not db.showUnstable then kind = "secure" end
+  if kind == "insecure" and not st.unstable.show then kind = "secure" end
   local stable   = (kind == "secure")
   local unstable = (kind == "insecure")
   local noThreat = (kind == "pulling" or kind == "lost")
-  f.aggro:SetShown(stable and db.showAggroGlow)
-  ShowFlash(f.unstable, unstable)
-  ShowFlash(f.nothreat, noThreat)
+  ShowFlash(f.aggro, stable and st.aggro.show, st.aggro.flash)
+  ShowFlash(f.unstable, unstable, st.unstable.flash)
+  ShowFlash(f.nothreat, noThreat and st.nothreat.show, st.nothreat.flash)
 
-  if db.showPercent and state.pct and not stable then
-    f.pct:SetFormattedText("%d%%", state.pct); f.pct:Show()
+  -- threat %: while the tank holds aggro the game always says 100%, so show how close the
+  -- next person is to pulling it instead; otherwise the tank's own %.
+  local pct, color
+  if db.showPercent then
+    if noThreat then pct, color = state.pct, db.colors.nothreat
+    elseif unstable then pct, color = state.closest or state.pct, db.colors.unstable
+    elseif stable and db.showPercentStable then pct, color = state.closest or 0, db.colors.aggro end
+  end
+  if pct then
+    f.pct:SetFormattedText("%d%%", pct); f.pct:SetTextColor(color[1], color[2], color[3]); f.pct:Show()
   else
     f.pct:Hide()
   end
