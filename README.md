@@ -29,6 +29,7 @@ Known limits
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
+- 3.6.0: Settings window restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
 - 3.5.0: Cleaner settings window; choose which glows flash, each with its own strength; threat % can also show while aggro is stable.
 - 3.4.1: Logo in the AddOns list.
 - 3.4.0: Pet tanking: Whose aggro to show (Auto / Me / My pet).

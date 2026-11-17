@@ -19,6 +19,7 @@ ns.DEFAULTS = {
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
   flashSpeed        = 0.35,  -- seconds per flash (no threat flashes a bit faster, stable a bit slower)
+  flareStyle        = true,  -- settings window in FlareUI's style when FlareUI is installed
   colors = {
     aggro    = { 0.35, 1.00, 0.45 },  -- stable
     unstable = { 1.00, 0.50, 0.05 },  -- unstable
