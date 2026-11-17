@@ -178,22 +178,28 @@ end
 
 -- the % on the chosen side of the nameplate; the "!" moves further out when they share a side
 local function PlaceText(f)
-  local side = ns.db.percentSide == "right" and "right" or "left"
-  if f.side == side then return end
-  f.side = side
+  local db = ns.db
+  local side = db.percentSide == "right" and "right" or "left"
+  local dx = side == "right" and (db.percentOffsetRight or 40) or (db.percentOffsetLeft or 6)
+  local dy = db.percentOffsetY or 0
+  local afterPct = side == "right" and db.showPercent
+  local ix = afterPct and (db.iconGapAfterPct or 6) or (db.iconOffsetX or 22)
+  local iy = db.iconOffsetY or 0
+  local key = side .. dx .. ":" .. dy .. ":" .. tostring(afterPct) .. ix .. ":" .. iy
+  if f.placedKey == key then return end
+  f.placedKey, f.side = key, side
   f.pct:ClearAllPoints()
   if side == "right" then
-    -- past the level box that sits right of the health bar (about 30 wide, plus a gap)
-    f.pct:SetPoint("LEFT", f.bar, "RIGHT", 40, 0)
-    f.pct:SetJustifyH("LEFT")
+    -- default 40: past the level box that sits right of the health bar
+    f.pct:SetPoint("LEFT", f.bar, "RIGHT", dx, dy); f.pct:SetJustifyH("LEFT")
   else
-    f.pct:SetPoint("RIGHT", f.bar, "LEFT", -6, 0); f.pct:SetJustifyH("RIGHT")
+    f.pct:SetPoint("RIGHT", f.bar, "LEFT", -dx, dy); f.pct:SetJustifyH("RIGHT")
   end
   -- the "!" sits after the % when they share the right side
   local function placeIcon(icon)
     icon:ClearAllPoints()
-    if side == "right" then icon:SetPoint("LEFT", f.pct, "RIGHT", 6, 0)
-    else icon:SetPoint("LEFT", f.bar, "RIGHT", 22, 0) end
+    if afterPct then icon:SetPoint("LEFT", f.pct, "RIGHT", ix, iy)
+    else icon:SetPoint("LEFT", f.bar, "RIGHT", ix, iy) end
   end
   for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl.icon) end
   for _, g in ipairs(f.gates) do placeIcon(g.flash.icon) end

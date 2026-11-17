@@ -124,25 +124,51 @@ local function BuildPanel(panel)
   y = y - 56
   at(UI.Section(panel, "Display", W_), 26, y); y = y - 32
   track(at(UI.Check(panel, "Only in a party or raid (or when my pet tanks)", S("onlyInGroup"), W_, Changed), 26, y))
-  track(at(UI.Check(panel, "\"!\" icon while aggro isn't stable", S("showIcon"), W_, Changed), 26, y - 24))
+  local iconDist, iconVert
+  local icon
+  icon = track(at(UI.Check(panel, "\"!\" icon while aggro isn't stable", S("showIcon"), W_, function()
+    Changed(); icon.Refresh()
+  end), 26, y - 24))
+  -- where the "!" sits: from the health bar, or from the end of the % when that's on the right too
+  local function iconKey()
+    return (ns.db.percentSide == "right" and ns.db.showPercent) and "iconGapAfterPct" or "iconOffsetX"
+  end
+  iconDist = track(at(UI.Slider(panel, "\"!\" distance", 196, 0, 80, 1,
+    { function() return ns.db[iconKey()] end, function(v) ns.db[iconKey()] = v end },
+    function(v) return v .. " px" end, Changed, 1), 50, y - 50))
+  iconVert = track(at(UI.Slider(panel, "\"!\" up / down", 166, -20, 20, 1, S("iconOffsetY"),
+    function(v) return (v > 0 and "+" or "") .. v .. " px" end, Changed, 1), 270, y - 50))
+  local ir = icon.Refresh
+  icon.Refresh = function()
+    ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4); iconVert:SetAlpha(ns.db.showIcon and 1 or 0.4)
+  end
   local stablePct = UI.Check(panel, "Also while aggro is stable", S("showPercentStable"), 300, Changed)
   local pct
   pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), 250, function()
-    Changed(); pct.Refresh()
-  end), 26, y - 48))
+    Changed(); pct.Refresh(); icon.Refresh()
+  end), 26, y - 94))
+  local dist, vert -- created below; the side switch refreshes the distance (it's kept per side)
   local side = track(at(UI.Toggle(panel, 120, { { "left", "On the left" }, { "right", "On the right" } }, S("percentSide"),
-    Changed, "Which side of the nameplate the % sits on. Click to switch."), 26 + 290, y - 47))
-  track(at(stablePct, 50, y - 72))
+    function() Changed(); if dist then dist.Refresh() end; icon.Refresh() end, "Which side of the nameplate the % sits on. Click to switch."), 26 + 290, y - 93))
+  track(at(stablePct, 50, y - 118))
   local pr = pct.Refresh
   pct.Refresh = function()
     pr(); stablePct.SetActive(ns.db.showPercent); side.SetActive(ns.db.showPercent); side.Refresh()
+    for _, w in ipairs({ dist, vert }) do if w then w:SetAlpha(ns.db.showPercent and 1 or 0.4) end end
   end
-  local n2 = at(UI.Text(panel, "note", "Read from the game's threat values, or from the threat line in each enemy's tooltip when the game hides them in combat. While you hold aggro, it's how close the next person is when the game shows that, otherwise 100%."), 72, y - 96)
+  local n2 = at(UI.Text(panel, "note", "Read from the game's threat values, or from the threat line in each enemy's tooltip when the game hides them in combat. While you hold aggro, it's how close the next person is when the game shows that, otherwise 100%."), 72, y - 142)
   n2:SetWidth(W_ - 46)
-  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 144))
+  -- where the % sits: distance from the bar (kept per side) and up/down
+  local function sideKey() return ns.db.percentSide == "right" and "percentOffsetRight" or "percentOffsetLeft" end
+  dist = track(at(UI.Slider(panel, "Distance from nameplate", 196, 0, 80, 1,
+    { function() return ns.db[sideKey()] end, function(v) ns.db[sideKey()] = v end },
+    function(v) return v .. " px" end, Changed, 1), 50, y - 186))
+  vert = track(at(UI.Slider(panel, "Up / down", 166, -20, 20, 1, S("percentOffsetY"),
+    function(v) return (v > 0 and "+" or "") .. v .. " px" end, Changed, 1), 270, y - 186))
+  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 232))
 
   -- Preview ----------------------------------------------------------------
-  y = y - 180
+  y = y - 268
   at(UI.Section(panel, "Preview on your target", W_), 26, y); y = y - 32
   local buttons = {}
   local MODES = { { "secure", "Stable" }, { "insecure", "Unstable" }, { "lost", "No threat" } }
