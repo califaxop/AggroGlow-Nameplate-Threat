@@ -163,12 +163,7 @@ local function Create(plate)
 
   f.pct = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.bar = bar
-  -- the nameplate's level box, right of the health bar (the % goes past it on the right side)
-  local uf = plate.UnitFrame
-  for _, cand in ipairs({ uf and uf.LevelFrame, uf and uf.levelFrame, uf and uf.LevelText, uf and uf.levelText,
-      uf and uf.Level, bar.LevelFrame, bar.levelText }) do
-    if type(cand) == "table" and cand.GetObjectType then f.level = cand; break end
-  end
+
 
   f.pct:Hide()
   return f
@@ -188,10 +183,8 @@ local function PlaceText(f)
   f.side = side
   f.pct:ClearAllPoints()
   if side == "right" then
-    -- past the level box: anchored to it when the nameplate has one (anchoring, not measuring,
-    -- is allowed), otherwise leaving room for it
-    local placed = f.level and pcall(f.pct.SetPoint, f.pct, "LEFT", f.level, "RIGHT", 6, 0)
-    if not placed then f.pct:ClearAllPoints(); f.pct:SetPoint("LEFT", f.bar, "RIGHT", 38, 0) end
+    -- past the level box that sits right of the health bar (about 30 wide, plus a gap)
+    f.pct:SetPoint("LEFT", f.bar, "RIGHT", 40, 0)
     f.pct:SetJustifyH("LEFT")
   else
     f.pct:SetPoint("RIGHT", f.bar, "LEFT", -6, 0); f.pct:SetJustifyH("RIGHT")
@@ -307,12 +300,6 @@ end
 function V.Hide(plate)
   local f = plate and indicators[plate]
   if f then HideAll(f) end
-end
-
--- for /ag debug: did any nameplate's level box get found?
-function V.LevelBoxFound()
-  for _, f in pairs(indicators) do if f.level then return true end end
-  return false
 end
 
 V.HasSecretSupport = function() return UIParent.SetAlphaFromBoolean ~= nil end
