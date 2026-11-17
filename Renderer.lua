@@ -181,10 +181,10 @@ local function PlaceText(f)
   local db = ns.db
   local side = db.percentSide == "right" and "right" or "left"
   local dx = side == "right" and (db.percentOffsetRight or 40) or (db.percentOffsetLeft or 6)
-  local dy = db.percentOffsetY or 0
+  local dy = 0
   local afterPct = side == "right" and db.showPercent
   local ix = afterPct and (db.iconGapAfterPct or 6) or (db.iconOffsetX or 22)
-  local iy = db.iconOffsetY or 0
+  local iy = 0
   local key = side .. dx .. ":" .. dy .. ":" .. tostring(afterPct) .. ix .. ":" .. iy
   if f.placedKey == key then return end
   f.placedKey, f.side = key, side
