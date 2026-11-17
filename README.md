@@ -12,7 +12,7 @@ Features
 - Works on every enemy you or your party are fighting, including ones a party member pulled.
 - Whose aggro: Auto (your pet when it's out, else you), Me, or My pet.
 - Unstable threshold from 50% to 100% of pulling.
-- Optional "!" icon and threat % beside the nameplate; the % can also show while aggro is stable (how close the next person is to pulling it).
+- Optional "!" icon and threat % beside the nameplate, on the side you choose; the % can also show while aggro is stable (how close the next person is to pulling it).
 - Only show in a party or raid (or while your pet tanks).
 
 Settings and commands
@@ -29,6 +29,7 @@ Known limits
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
+- 3.7.0: Threat % also shows when the game hides threat values in combat (your % while the enemy isn't on the tank); choose which side of the nameplate it sits on.
 - 3.6.0: Settings window restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
 - 3.5.0: Cleaner settings window; choose which glows flash, each with its own strength; threat % can also show while aggro is stable.
 - 3.4.1: Logo in the AddOns list.

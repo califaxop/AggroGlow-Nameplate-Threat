@@ -16,6 +16,7 @@ ns.DEFAULTS = {
   showIcon          = false, -- "!" while aggro isn't stable
   showPercent       = false, -- threat % beside the nameplate
   showPercentStable = false, -- ...also while aggro is stable
+  percentSide       = "left",  -- which side of the nameplate the % sits on: "left" | "right"
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
   flashSpeed        = 0.35,  -- seconds per flash (no threat flashes a bit faster, stable a bit slower)

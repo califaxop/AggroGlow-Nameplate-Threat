@@ -162,7 +162,7 @@ local function Create(plate)
   f.hidTank:Hide()
 
   f.pct = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  f.pct:SetPoint("RIGHT", bar, "LEFT", -6, 0)
+  f.bar = bar
 
   f.pct:Hide()
   return f
@@ -175,7 +175,28 @@ local function StyleFlash(fl, c, alpha, speed, showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
+-- the % on the chosen side of the nameplate; the "!" moves further out when they share a side
+local function PlaceText(f)
+  local side = ns.db.percentSide == "right" and "right" or "left"
+  if f.side == side then return end
+  f.side = side
+  f.pct:ClearAllPoints()
+  if side == "right" then
+    f.pct:SetPoint("LEFT", f.bar, "RIGHT", 6, 0); f.pct:SetJustifyH("LEFT")
+  else
+    f.pct:SetPoint("RIGHT", f.bar, "LEFT", -6, 0); f.pct:SetJustifyH("RIGHT")
+  end
+  local iconX = (side == "right") and 46 or 22
+  for _, fl in ipairs({ f.unstable, f.nothreat }) do
+    fl.icon:ClearAllPoints(); fl.icon:SetPoint("LEFT", f.bar, "RIGHT", iconX, 0)
+  end
+  for _, g in ipairs(f.gates) do
+    g.flash.icon:ClearAllPoints(); g.flash.icon:SetPoint("LEFT", f.bar, "RIGHT", iconX, 0)
+  end
+end
+
 local function Style(f)
+  PlaceText(f)
   local db, st = ns.db, ns.db.states
   StyleFlash(f.aggro, db.colors.aggro, st.aggro.alpha, db.flashSpeed * 1.5, false)
   StyleFlash(f.unstable, db.colors.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon)
@@ -239,7 +260,21 @@ function V.Render(plate, state)
     else
       ShowFlash(f.aggro, false); ShowFlash(f.nothreat, false); HideGates(f)
     end
-    f.pct:Hide()
+    -- the tank's %, hidden: the game draws it; shown while the enemy isn't on the tank
+    -- (while it is, the game says 100%, and hidden values can't be compared to find who's next)
+    local shown = false
+    if db.showPercent and state.pct ~= nil and f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
+      local ok = pcall(f.pct.SetFormattedText, f.pct, "%d%%", state.pct)
+      if not ok then ok = pcall(f.pct.SetText, f.pct, state.pct) end
+      if ok then
+        local c = db.colors.nothreat
+        f.pct:SetTextColor(c[1], c[2], c[3])
+        f.pct:Show()
+        f.pct:SetAlphaFromBoolean(t, 0, 1)
+        shown = true
+      end
+    end
+    if not shown then f.pct:Hide() end
     return
   end
 
@@ -262,6 +297,7 @@ function V.Render(plate, state)
     elseif stable and db.showPercentStable then pct, color = state.closest or 0, db.colors.aggro end
   end
   if pct then
+    f.pct:SetAlpha(1)
     f.pct:SetFormattedText("%d%%", pct); f.pct:SetTextColor(color[1], color[2], color[3]); f.pct:Show()
   else
     f.pct:Hide()

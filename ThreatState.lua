@@ -79,7 +79,8 @@ local function Evaluate(unit)
   local isTanking, status, pct = UnitDetailedThreatSituation(tank, unit)
   if isSecret(isTanking) or isSecret(status) then
     local _, others = OthersThreat(unit, tank)
-    return { kind = "hidden", isTanking = isTanking, others = others, tank = tank }
+    -- pct: the tank's threat %, still hidden; the game can draw it as text without us reading it
+    return { kind = "hidden", isTanking = isTanking, others = others, tank = tank, pct = pct }
   end
   pct = Readable(pct) and pct or nil
 

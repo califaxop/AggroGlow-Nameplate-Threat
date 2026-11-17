@@ -127,12 +127,16 @@ local function BuildPanel(panel)
   track(at(UI.Check(panel, "\"!\" icon while aggro isn't stable", S("showIcon"), W_, Changed), 26, y - 24))
   local stablePct = UI.Check(panel, "Also while aggro is stable", S("showPercentStable"), 300, Changed)
   local pct
-  pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), W_, function()
+  pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), 250, function()
     Changed(); pct.Refresh()
   end), 26, y - 48))
+  local side = track(at(UI.Toggle(panel, 120, { { "left", "On the left" }, { "right", "On the right" } }, S("percentSide"),
+    Changed, "Which side of the nameplate the % sits on. Click to switch."), 26 + 290, y - 47))
   track(at(stablePct, 50, y - 72))
   local pr = pct.Refresh
-  pct.Refresh = function() pr(); stablePct.SetActive(ns.db.showPercent) end
+  pct.Refresh = function()
+    pr(); stablePct.SetActive(ns.db.showPercent); side.SetActive(ns.db.showPercent); side.Refresh()
+  end
   local n2 = at(UI.Text(panel, "note", "While the tank holds aggro, the % shows how close the next person is to pulling it."), 72, y - 96)
   n2:SetWidth(W_ - 46)
   track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 124))
