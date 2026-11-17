@@ -1,0 +1,120 @@
+-- Threat State: reads the client's native threat info for each unit and tracks transitions.
+--
+-- Native API (values may be hidden by the client in some content):
+--   UnitDetailedThreatSituation("player", unit) -> isTanking, status, scaledPercent
+--   UnitThreatSituation(groupUnit, unit)        -> status or nil (nil = not on its threat list)
+-- status: 0 = not tanking, lower threat   1 = not tanking, higher threat (about to pull)
+--         2 = tanking, someone is close    3 = tanking securely
+local _, ns = ...
+local S = {}
+ns.State = S
+
+local isSecret, Readable = ns.isSecret, ns.Readable
+local states = {}           -- unit -> last state
+S.onTransition = nil        -- function(unit, old, new)
+
+local function GroupUnits()
+  local list = {}
+  if IsInRaid() then
+    for i = 1, GetNumGroupMembers() do list[#list + 1] = "raid" .. i end
+  elseif IsInGroup() then
+    for i = 1, GetNumSubgroupMembers() do list[#list + 1] = "party" .. i end
+  end
+  return list
+end
+
+local function PetOut()
+  local e = UnitExists("pet")
+  if not Readable(e) or not e then return false end
+  local dead = UnitIsDead("pet")
+  return not (Readable(dead) and dead)
+end
+
+-- Whose aggro the glows follow: you, or your pet (setting "tank").
+function S.TankUnit()
+  local t = ns.db.tank or "auto"
+  if t == "me" then return "player" end
+  if t == "pet" then return PetOut() and "pet" or nil end
+  return PetOut() and "pet" or "player"
+end
+
+-- Everyone else whose threat could pull an enemy off the tank: you, your pet, your group.
+local function Others(tank)
+  local list = GroupUnits()
+  if tank ~= "player" then list[#list + 1] = "player" end
+  if tank ~= "pet" and PetOut() then list[#list + 1] = "pet" end
+  return list
+end
+
+-- Returns a state table (from the tank's point of view - you or your pet):
+--   kind = "none"      not engaged with the tank, you or your group
+--        | "secure"    the tank has aggro, safely
+--        | "insecure"  the tank has aggro, someone is close
+--        | "pulling"   the tank doesn't, but is about to
+--        | "lost"      engaged, the tank doesn't have aggro
+--        | "hidden"    the client hides the values; .isTanking may be a hidden boolean
+--   pct  = the tank's threat % (number) when readable;  tank = "player" / "pet"
+-- Highest threat anyone else has on `unit`, as % of what they'd need to pull it (100 = pulls).
+-- Readable values only; hidden ones are returned separately for the client to evaluate.
+local function OthersThreat(unit, tank)
+  local best, hidden = nil, {}
+  for _, g in ipairs(Others(tank)) do
+    local _, _, p = UnitDetailedThreatSituation(g, unit)
+    if isSecret(p) then hidden[#hidden + 1] = p
+    elseif p and (not best or p > best) then best = p end
+  end
+  return best, hidden
+end
+
+local function Evaluate(unit)
+  if not UnitExists(unit) then return { kind = "none" } end
+  local canAttack = UnitCanAttack("player", unit)
+  if Readable(canAttack) and not canAttack then return { kind = "none" } end
+  local dead = UnitIsDead(unit)
+  if Readable(dead) and dead then return { kind = "none" } end
+
+  local tank = S.TankUnit()
+  if not tank then return { kind = "none" } end -- "My pet" chosen, but no pet out
+
+  local isTanking, status, pct = UnitDetailedThreatSituation(tank, unit)
+  if isSecret(isTanking) or isSecret(status) then
+    local _, others = OthersThreat(unit, tank)
+    return { kind = "hidden", isTanking = isTanking, others = others, tank = tank }
+  end
+  pct = Readable(pct) and pct or nil
+
+  if status ~= nil then
+    if status == 3 or status == 2 then
+      -- The tank has aggro. It's unstable if the game says so, or anyone else is at or above
+      -- the "unstable" threshold of pulling it off the tank.
+      local closest = OthersThreat(unit, tank)
+      local unstable = status == 2 or (closest and closest >= (ns.db.unstableAt or 80))
+      return { kind = unstable and "insecure" or "secure", pct = pct, closest = closest, tank = tank }
+    end
+    if status == 1 then return { kind = "pulling", pct = pct, tank = tank } end
+    return { kind = "lost", pct = pct, tank = tank }
+  end
+
+  -- Not on the tank's threat list: is it fighting anyone else (you, your pet, your group)?
+  for _, g in ipairs(Others(tank)) do
+    local s = UnitThreatSituation(g, unit)
+    if isSecret(s) then return { kind = "hidden", isTanking = false, tank = tank } end
+    if s ~= nil then return { kind = "lost", pct = 0, tank = tank } end
+  end
+  return { kind = "none" }
+end
+
+local HAS_AGGRO = { secure = true, insecure = true }
+
+function S.Update(unit)
+  local new = Evaluate(unit)
+  local old = states[unit]
+  states[unit] = new
+  if S.onTransition and old and old.kind ~= new.kind then
+    S.onTransition(unit, old, new, HAS_AGGRO[old.kind] and not HAS_AGGRO[new.kind] and new.kind ~= "none")
+  end
+  return new
+end
+
+function S.Get(unit) return states[unit] end
+function S.Clear(unit) states[unit] = nil end
