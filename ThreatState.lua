@@ -66,6 +66,32 @@ local function OthersThreat(unit, tank)
   return best, hidden
 end
 
+-- Your threat % on a unit, read from the threat line Blizzard puts in its tooltip ("85% Threat").
+-- The game hides threat values from addons in combat, but this tooltip line stays readable.
+-- Cached briefly per unit: building a tooltip on every refresh would be wasteful.
+local tipCache = {}
+local TIP_TTL = 0.3
+function S.TooltipPct(unit)
+  if not (C_TooltipInfo and C_TooltipInfo.GetUnit) then return nil end
+  local now = GetTime()
+  local c = tipCache[unit]
+  if c and now - c.t < TIP_TTL then return c.pct end
+  local pct
+  local ok, data = pcall(C_TooltipInfo.GetUnit, unit)
+  if ok and type(data) == "table" and not isSecret(data) then
+    for _, l in ipairs(data.lines or {}) do
+      local okT, t = pcall(function() return l.leftText end)
+      if okT and type(t) == "string" and not isSecret(t) then
+        local n = t:match("^%s*(%d+)%%")
+        if n then pct = tonumber(n) end
+      end
+    end
+  end
+  tipCache[unit] = { t = now, pct = pct }
+  return pct
+end
+function S.ForgetTooltip(unit) tipCache[unit] = nil end
+
 local function Evaluate(unit)
   if not UnitExists(unit) then return { kind = "none" } end
   local canAttack = UnitCanAttack("player", unit)
@@ -78,9 +104,19 @@ local function Evaluate(unit)
 
   local isTanking, status, pct = UnitDetailedThreatSituation(tank, unit)
   if isSecret(isTanking) or isSecret(status) then
+    -- Hidden values. When the glows follow you, the tooltip's threat line still says how much
+    -- threat you have: 100% = it's on you; below that, how close you are to pulling it.
+    -- (It can't tell "someone's about to take it from you": it only knows your own threat.)
+    if tank == "player" then
+      local tp = S.TooltipPct(unit)
+      if tp then
+        if tp >= 100 then return { kind = "secure", pct = 100, tank = tank, via = "tooltip" } end
+        if tp >= (ns.db.unstableAt or 80) then return { kind = "pulling", pct = tp, tank = tank, via = "tooltip" } end
+        return { kind = "lost", pct = tp, tank = tank, via = "tooltip" }
+      end
+    end
     local _, others = OthersThreat(unit, tank)
-    -- pct: the tank's threat %, still hidden; the game can draw it as text without us reading it
-    return { kind = "hidden", isTanking = isTanking, others = others, tank = tank, pct = pct }
+    return { kind = "hidden", isTanking = isTanking, others = others, tank = tank }
   end
   pct = Readable(pct) and pct or nil
 
@@ -93,6 +129,8 @@ local function Evaluate(unit)
       return { kind = unstable and "insecure" or "secure", pct = pct, closest = closest, tank = tank }
     end
     if status == 1 then return { kind = "pulling", pct = pct, tank = tank } end
+    -- not on the tank yet, but close to the warning threshold of pulling it
+    if pct and pct >= (ns.db.unstableAt or 80) then return { kind = "pulling", pct = pct, tank = tank } end
     return { kind = "lost", pct = pct, tank = tank }
   end
 

@@ -63,8 +63,8 @@ end
 ---------------------------------------------------------------------------
 local STATES = {
   { "aggro",    "Stable",    "The tank has aggro, safely." },
-  { "unstable", "Unstable",  "The tank has aggro, but someone is close to pulling it." },
-  { "nothreat", "No threat", "Engaged with you or your group, but not on the tank." },
+  { "unstable", "Unstable",  "Someone is close to pulling it off the tank, or it's about to land on the tank (the tank is at or above the warning % of pulling it)." },
+  { "nothreat", "No threat", "Engaged with you or your group, but not on the tank, and the tank isn't close to pulling it." },
 }
 local W_ = 420 -- content width
 
@@ -116,7 +116,7 @@ local function BuildPanel(panel)
   end
   track(at(UI.Slider(panel, "Flash speed", 196, 0.15, 1, 0.05, S("flashSpeed"),
     function(v) return format("%.2fs per flash", v) end, Changed), 26, y - 6))
-  track(at(UI.Slider(panel, "Unstable at", 200, 50, 100, 5,
+  track(at(UI.Slider(panel, "Warn at", 200, 50, 100, 5,
     { function() return ns.db.unstableAt end, function(v) ns.db.unstableAt = math.floor(v + 0.5) end },
     function(v) return math.floor(v + 0.5) .. "% of pulling" end, Changed), 246, y - 6))
 
@@ -137,12 +137,12 @@ local function BuildPanel(panel)
   pct.Refresh = function()
     pr(); stablePct.SetActive(ns.db.showPercent); side.SetActive(ns.db.showPercent); side.Refresh()
   end
-  local n2 = at(UI.Text(panel, "note", "While the tank holds aggro, the % shows how close the next person is to pulling it."), 72, y - 96)
+  local n2 = at(UI.Text(panel, "note", "Read from the game's threat values, or from the threat line in each enemy's tooltip when the game hides them in combat. While you hold aggro, it's how close the next person is when the game shows that, otherwise 100%."), 72, y - 96)
   n2:SetWidth(W_ - 46)
-  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 124))
+  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 144))
 
   -- Preview ----------------------------------------------------------------
-  y = y - 160
+  y = y - 180
   at(UI.Section(panel, "Preview on your target", W_), 26, y); y = y - 32
   local buttons = {}
   local MODES = { { "secure", "Stable" }, { "insecure", "Unstable" }, { "lost", "No threat" } }

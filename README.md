@@ -6,7 +6,7 @@ AggroGlow: Nameplate Threat adds a glow around each engaged enemy's nameplate th
 Features
 - Three glows:
   - Green (stable): the tank has aggro, safely.
-  - Orange (unstable): the tank has aggro, but someone is at or above your threshold (default 80%) of pulling it.
+  - Orange (unstable): the tank has aggro but someone is at or above your warning threshold (default 80%) of pulling it, or the tank is about to pull it.
   - Red (no threat): the enemy is engaged with you or your group but isn't on the tank.
 - Each glow can be shown or hidden, flashing or steady, with its own strength and color (by default stable is steady, the other two flash).
 - Works on every enemy you or your party are fighting, including ones a party member pulled.
@@ -25,11 +25,11 @@ Requirements
 - Enemy nameplates turned on.
 
 Known limits
-- When Forever hides threat values, the glow can still tell "tank has it" (green) from "doesn't" (red); unstable needs a client function not yet confirmed on Forever (/ag debug reports it).
+- When Forever hides threat values in combat, your own threat is read from each enemy's tooltip: have aggro, about to pull, and no aggro all work, with the %. "Someone is about to take it from you" needs the hidden values, so it only shows when the game gives them. With your pet as the tank, only "pet has it" (green) vs "doesn't" (red) work then.
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
-- 3.7.0: Threat % also shows when the game hides threat values in combat (your % while the enemy isn't on the tank); choose which side of the nameplate it sits on.
+- 3.7.0: Threat % and glows now work when the game hides threat values in combat: read from the threat line in each enemy's tooltip. The orange glow also warns when you're about to pull an enemy. Choose which side of the nameplate the % sits on.
 - 3.6.0: Settings window restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
 - 3.5.0: Cleaner settings window; choose which glows flash, each with its own strength; threat % can also show while aggro is stable.
 - 3.4.1: Logo in the AddOns list.

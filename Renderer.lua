@@ -260,30 +260,18 @@ function V.Render(plate, state)
     else
       ShowFlash(f.aggro, false); ShowFlash(f.nothreat, false); HideGates(f)
     end
-    -- the tank's %, hidden: the game draws it; shown while the enemy isn't on the tank
-    -- (while it is, the game says 100%, and hidden values can't be compared to find who's next)
-    local shown = false
-    if db.showPercent and state.pct ~= nil and f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
-      local ok = pcall(f.pct.SetFormattedText, f.pct, "%d%%", state.pct)
-      if not ok then ok = pcall(f.pct.SetText, f.pct, state.pct) end
-      if ok then
-        local c = db.colors.nothreat
-        f.pct:SetTextColor(c[1], c[2], c[3])
-        f.pct:Show()
-        f.pct:SetAlphaFromBoolean(t, 0, 1)
-        shown = true
-      end
-    end
-    if not shown then f.pct:Hide() end
+    f.pct:Hide() -- hidden values and no tooltip line: no number to show
     return
   end
 
   -- readable values: three states
   HideGates(f)
+  -- unstable: the tank's hold is slipping, or (pulling) it's about to land on the tank
   if kind == "insecure" and not st.unstable.show then kind = "secure" end
+  if kind == "pulling" and not st.unstable.show then kind = "lost" end
   local stable   = (kind == "secure")
-  local unstable = (kind == "insecure")
-  local noThreat = (kind == "pulling" or kind == "lost")
+  local unstable = (kind == "insecure" or kind == "pulling")
+  local noThreat = (kind == "lost")
   ShowFlash(f.aggro, stable and st.aggro.show, st.aggro.flash)
   ShowFlash(f.unstable, unstable, st.unstable.flash)
   ShowFlash(f.nothreat, noThreat and st.nothreat.show, st.nothreat.flash)
@@ -293,8 +281,9 @@ function V.Render(plate, state)
   local pct, color
   if db.showPercent then
     if noThreat then pct, color = state.pct, db.colors.nothreat
+    elseif kind == "pulling" then pct, color = state.pct, db.colors.unstable
     elseif unstable then pct, color = state.closest or state.pct, db.colors.unstable
-    elseif stable and db.showPercentStable then pct, color = state.closest or 0, db.colors.aggro end
+    elseif stable and db.showPercentStable then pct, color = state.closest or state.pct, db.colors.aggro end
   end
   if pct then
     f.pct:SetAlpha(1)

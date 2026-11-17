@@ -127,7 +127,8 @@ SlashCmdList.AGGROGLOW = function(msg)
         local t, s, p = UnitDetailedThreatSituation(tank or "player", unit)
         local st = S.Get(unit)
         ns.Dbg(unit, "isTanking=" .. show(t), "status=" .. show(s), "pct=" .. show(p),
-          "-> " .. (st and st.kind or "?"))
+          "tooltip=" .. tostring(S.TooltipPct and S.TooltipPct(unit) or "none"),
+          "-> " .. (st and st.kind or "?") .. (st and st.via and (" (from " .. st.via .. ")") or ""))
       end
       ns.Dbg("nameplates tracked:", n, "| client can show hidden values:",
         V.HasSecretSupport() and "yes" or "no",
