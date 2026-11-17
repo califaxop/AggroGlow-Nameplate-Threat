@@ -132,7 +132,7 @@ SlashCmdList.AGGROGLOW = function(msg)
       end
       ns.Dbg("nameplates tracked:", n, "| client can show hidden values:",
         V.HasSecretSupport() and "yes" or "no",
-        "| hidden threat % checks:", ns.curveState)
+        "| hidden threat % checks:", ns.curveState, "| level box found:", V.LevelBoxFound and V.LevelBoxFound() and "yes" or "no")
     end
   else
     ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag debug")
