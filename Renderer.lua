@@ -205,13 +205,21 @@ local function PlaceText(f)
   for _, g in ipairs(f.gates) do placeIcon(g.flash.icon) end
 end
 
-local function Style(f)
+-- the glow settings in use: yours as the tank (or your pet's), or yours when you're not the tank
+local function Sets(dps)
+  local db = ns.db
+  if dps then return db.statesDps, db.colorsDps end
+  return db.states, db.colors
+end
+
+local function Style(f, dps)
   PlaceText(f)
-  local db, st = ns.db, ns.db.states
-  StyleFlash(f.aggro, db.colors.aggro, st.aggro.alpha, db.flashSpeed * 1.5, false)
-  StyleFlash(f.unstable, db.colors.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon)
-  StyleFlash(f.nothreat, db.colors.nothreat, st.nothreat.alpha, db.flashSpeed * 0.7, db.showIcon)
-  for _, g in ipairs(f.gates) do StyleFlash(g.flash, db.colors.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon) end
+  local db = ns.db
+  local st, col = Sets(dps)
+  StyleFlash(f.aggro, col.aggro, st.aggro.alpha, db.flashSpeed * 1.5, false)
+  StyleFlash(f.unstable, col.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon)
+  StyleFlash(f.nothreat, col.nothreat, st.nothreat.alpha, db.flashSpeed * 0.7, db.showIcon)
+  for _, g in ipairs(f.gates) do StyleFlash(g.flash, col.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon) end
 end
 
 -- on: the glow is visible; flashing: it pulses (else it stays steady)
@@ -236,8 +244,10 @@ function V.Render(plate, state)
   if not plate then return end
   local f = indicators[plate]
   if not f then f = Create(plate); indicators[plate] = f end
-  Style(f)
-  local db, st = ns.db, ns.db.states
+  local dps = state and state.dps or false
+  Style(f, dps)
+  local db = ns.db
+  local st, col = Sets(dps)
   local kind = state and state.kind or "none"
 
   f.aggro.holder:SetAlpha(1); f.unstable.holder:SetAlpha(1); f.nothreat.holder:SetAlpha(1)
@@ -249,6 +259,18 @@ function V.Render(plate, state)
     -- "am I tanking" flag. It can't tell stable from unstable, so tanking = stable here.
     local t = state.isTanking
     ShowFlash(f.unstable, false)
+    if dps then
+      HideGates(f); f.pct:Hide()
+      if f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
+        ShowFlash(f.aggro, st.aggro.show, st.aggro.flash)
+        f.aggro.holder:SetAlphaFromBoolean(t, 0, 1)
+        ShowFlash(f.nothreat, st.nothreat.show, st.nothreat.flash)
+        f.nothreat.holder:SetAlphaFromBoolean(t, 1, 0)
+      else
+        ShowFlash(f.aggro, false); ShowFlash(f.nothreat, false)
+      end
+      return
+    end
     if state.warn and f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
       -- your pet tanks and you're catching up (from the tooltip): orange while your pet has it,
       -- red if it doesn't
@@ -259,7 +281,7 @@ function V.Render(plate, state)
       f.nothreat.holder:SetAlphaFromBoolean(t, 0, 1)
       HideGates(f)
       if db.showPercent and state.pct then
-        local c = db.colors.unstable
+        local c = col.unstable
         f.pct:SetAlpha(1); f.pct:SetFormattedText("%d%%", state.pct); f.pct:SetTextColor(c[1], c[2], c[3]); f.pct:Show()
       else
         f.pct:Hide()
@@ -309,10 +331,10 @@ function V.Render(plate, state)
   -- next person is to pulling it instead; otherwise the tank's own %.
   local pct, color
   if db.showPercent then
-    if noThreat then pct, color = state.pct, db.colors.nothreat
-    elseif kind == "pulling" then pct, color = state.pct, db.colors.unstable
-    elseif unstable then pct, color = state.closest or state.pct, db.colors.unstable
-    elseif stable and db.showPercentStable then pct, color = state.closest or state.pct, db.colors.aggro end
+    if noThreat then pct, color = state.pct, col.nothreat
+    elseif kind == "pulling" then pct, color = state.pct, col.unstable
+    elseif unstable then pct, color = state.closest or state.pct, col.unstable
+    elseif stable and db.showPercentStable then pct, color = state.closest or state.pct, col.aggro end
   end
   if pct then
     f.pct:SetAlpha(1)

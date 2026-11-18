@@ -34,21 +34,22 @@ local function OpenColorPicker(color, onChange)
   end
 end
 
-local function Swatch(parent, key)
+local function Swatch(parent, key, colorsFn)
+  colorsFn = colorsFn or function() return ns.db.colors end
   local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
   b:SetSize(16, 16)
   b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
   local hover = false
   local function paint(th)
     th = th or UI.Theme()
-    local c = ns.db and ns.db.colors[key]
+    local c = ns.db and colorsFn()[key]
     if c then b:SetBackdropColor(c[1], c[2], c[3]) end
     b:SetBackdropBorderColor(UI.RGB(hover and th.title or th.accent))
   end
   UI.Skin(paint)
   b.Refresh = function() paint() end
   b:SetScript("OnClick", function()
-    OpenColorPicker(ns.db.colors[key], function() b.Refresh(); Changed() end)
+    OpenColorPicker(colorsFn()[key], function() b.Refresh(); Changed() end)
   end)
   b:SetScript("OnEnter", function(self)
     hover = true; paint()
@@ -66,6 +67,13 @@ local STATES = {
   { "unstable", "Unstable",  "Someone is close to pulling it off the tank, or it's about to land on the tank (the tank is at or above the warning % of pulling it)." },
   { "nothreat", "No threat", "Engaged with you or your group, but not on the tank, and the tank isn't close to pulling it." },
 }
+-- the same three glows when you're not the tank
+local STATES_DPS = {
+  { "aggro",    "Safe",    "It's on someone else, and you're well below them." },
+  { "unstable", "Close",   "You're at or above the warning % of pulling it off them." },
+  { "nothreat", "On you",  "You pulled it: it's attacking you." },
+}
+local editSet = "tank" -- which settings the Glows table edits: "tank" or "dps"
 local W_ = 420 -- content width
 
 local function BuildPanel(panel)
@@ -84,22 +92,38 @@ local function BuildPanel(panel)
   local n1 = at(UI.Text(panel, "note", "With your pet as the tank, you and your group count as \"someone close\"."), 26, -112)
   n1:SetWidth(W_)
 
+  -- My role --------------------------------------------------------------------
+  at(UI.Text(panel, "line", "My role"), 26, -140)
+  track(at(UI.Selector(panel, 300, { { "auto", "Auto: my group role (tank when solo)" }, { "tank", "Tank" }, { "dps", "Not the tank (damage / healer)" } },
+    S("role"), Changed, "Auto uses your group-finder role in a group (your spec's role if none is assigned), and counts you as the tank when solo."), 120, -136))
+  local n2 = at(UI.Text(panel, "note", "Not the tank: the glows show your own threat the other way round, green while it's on someone else, orange when you're close to pulling it, red when it's on you."), 26, -164)
+  n2:SetWidth(W_)
+
   -- Glows ------------------------------------------------------------------
-  at(UI.Section(panel, "Glows", W_), 26, -140)
+  local G0 = -206
+  at(UI.Section(panel, "Glows", W_), 26, G0)
+  local rowsRefresh = {}
+  local setSwitch = track(at(UI.Toggle(panel, 230, { { "tank", "Settings for: I'm the tank" }, { "dps", "Settings for: I'm not the tank" } },
+    { function() return editSet end, function(v) editSet = v end },
+    function() for _, f in ipairs(rowsRefresh) do f() end end,
+    "Each mode has its own glows. Click to switch which one you're editing."), 26, G0 - 30))
   local COL_SHOW, COL_FLASH, COL_STR = 196, 246, 296
-  at(UI.Text(panel, "note", "Show"), 26 + COL_SHOW - 4, -170)
-  at(UI.Text(panel, "note", "Flash"), 26 + COL_FLASH - 4, -170)
-  at(UI.Text(panel, "note", "Strength"), 26 + COL_STR, -170)
-  local y = -188
-  for _, st in ipairs(STATES) do
+  at(UI.Text(panel, "note", "Show"), 26 + COL_SHOW - 4, G0 - 60)
+  at(UI.Text(panel, "note", "Flash"), 26 + COL_FLASH - 4, G0 - 60)
+  at(UI.Text(panel, "note", "Strength"), 26 + COL_STR, G0 - 60)
+  local y = G0 - 78
+  for i, st in ipairs(STATES) do
     local key = st[1]
-    local function s() return ns.db.states[key] end
-    local sw = track(at(Swatch(panel, key), 26, y - 4))
+    local function s() return (editSet == "dps") and ns.db.statesDps[key] or ns.db.states[key] end
+    local function colors() return (editSet == "dps") and ns.db.colorsDps or ns.db.colors end
+    local function label() return (editSet == "dps") and STATES_DPS[i] or st end
+    local sw = track(at(Swatch(panel, key, colors), 26, y - 4))
     local name = UI.Text(panel, "line", st[2]); name:SetPoint("LEFT", sw, "RIGHT", 8, 0)
     local hit = CreateFrame("Frame", nil, panel)
     hit:SetPoint("TOPLEFT", name, "TOPLEFT", -2, 2); hit:SetPoint("BOTTOMRIGHT", name, "BOTTOMRIGHT", 2, -2)
     hit:SetScript("OnEnter", function(self)
-      GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(st[2]); GameTooltip:AddLine(st[3], 1, 1, 1, true); GameTooltip:Show()
+      local l = label()
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(l[2]); GameTooltip:AddLine(l[3], 1, 1, 1, true); GameTooltip:Show()
     end)
     hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
     local str = track(at(UI.Slider(panel, "", 124, 0.05, 1, 0.05,
@@ -112,6 +136,13 @@ local function BuildPanel(panel)
     end), 26 + COL_SHOW, y - 2))
     local r = show.Refresh
     show.Refresh = function() r(); flash.SetActive(s().show); str:SetAlpha(s().show and 1 or 0.4) end
+    -- switching which settings are edited: relabel and reload this row
+    rowsRefresh[#rowsRefresh + 1] = function()
+      name:SetText(label()[2]); sw.Refresh(); show.Refresh(); flash.Refresh(); str.Refresh()
+    end
+    local rr = rowsRefresh[#rowsRefresh]
+    local sr = sw.Refresh
+    sw.Refresh = function() sr(); name:SetText(label()[2]) end
     y = y - 32
   end
   track(at(UI.Slider(panel, "Flash speed", 196, 0.15, 1, 0.05, S("flashSpeed"),
@@ -140,7 +171,7 @@ local function BuildPanel(panel)
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
-  local stablePct = UI.Check(panel, "Also while aggro is stable", S("showPercentStable"), 300, Changed)
+  local stablePct = UI.Check(panel, "Also while stable (or safe, when not the tank)", S("showPercentStable"), 300, Changed)
   local pct
   pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), 250, function()
     Changed(); pct.Refresh(); icon.Refresh()

@@ -38,6 +38,34 @@ function S.TankUnit()
   return PetOut() and "pet" or "player"
 end
 
+-- Are you the tank? "tank" / "dps" as set, or on "auto": your group-finder role in a group (your
+-- spec's role if none is assigned), and the tank when you're solo (enemies come to you anyway).
+function S.IsTankRole()
+  local r = ns.db.role or "auto"
+  if r == "tank" then return true end
+  if r == "dps" then return false end
+  if not (IsInGroup and IsInGroup()) then return true end
+  local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")
+  if role == "TANK" then return true end
+  if role == "DAMAGER" or role == "HEALER" then return false end
+  local ok, spec = pcall(function() return GetSpecialization and GetSpecialization() end)
+  if ok and spec then
+    local okR, sr = pcall(GetSpecializationRole, spec)
+    if okR and sr then return sr == "TANK" end
+  end
+  return true
+end
+
+-- Which glows to show: "pet" (your pet's aggro), "tank" (yours, as the tank) or "dps" (yours, as
+-- someone who doesn't want it). On Auto your pet counts unless you're in a group as a non-tank.
+function S.Mode()
+  local t = ns.db.tank or "auto"
+  if t == "pet" then return "pet" end
+  local tankRole = S.IsTankRole()
+  if t == "auto" and PetOut() and (tankRole or not (IsInGroup and IsInGroup())) then return "pet" end
+  return tankRole and "tank" or "dps"
+end
+
 -- Everyone else whose threat could pull an enemy off the tank: you, your pet, your group.
 local function Others(tank)
   local list = GroupUnits()
@@ -92,6 +120,36 @@ function S.TooltipPct(unit)
 end
 function S.ForgetTooltip(unit) tipCache[unit] = nil end
 
+-- Not the tank: your own threat, read the other way round.
+--   secure   = safe: it's on someone else and you're well below them   (green by default)
+--   insecure = close: you're at or above the warning % of pulling it  (orange)
+--   lost     = on you: you pulled it                                   (red)
+local function EvaluateDps(unit)
+  local warn = ns.db.unstableAt or 80
+  local isTanking, status, pct = UnitDetailedThreatSituation("player", unit)
+  if isSecret(isTanking) or isSecret(status) then
+    local tp = S.TooltipPct(unit)
+    if tp then
+      if tp >= 100 then return { kind = "lost", pct = tp, dps = true, via = "tooltip" } end
+      if tp >= warn then return { kind = "insecure", pct = tp, dps = true, via = "tooltip" } end
+      return { kind = "secure", pct = tp, dps = true, via = "tooltip" }
+    end
+    return { kind = "hidden", isTanking = isTanking, dps = true }
+  end
+  pct = Readable(pct) and pct or nil
+  if status == 3 or status == 2 then return { kind = "lost", pct = pct, dps = true } end
+  if status == 1 or (pct and pct >= warn) then return { kind = "insecure", pct = pct, dps = true } end
+  if status ~= nil then return { kind = "secure", pct = pct, dps = true } end
+  -- not on your threat list: fighting your group (it's on someone else)?
+  local others = GroupUnits()
+  if PetOut() then others[#others + 1] = "pet" end
+  for _, g in ipairs(others) do
+    local s2 = UnitThreatSituation(g, unit)
+    if isSecret(s2) or s2 ~= nil then return { kind = "secure", pct = 0, dps = true } end
+  end
+  return { kind = "none" }
+end
+
 local function Evaluate(unit)
   if not UnitExists(unit) then return { kind = "none" } end
   local canAttack = UnitCanAttack("player", unit)
@@ -99,7 +157,9 @@ local function Evaluate(unit)
   local dead = UnitIsDead(unit)
   if Readable(dead) and dead then return { kind = "none" } end
 
-  local tank = S.TankUnit()
+  local mode = S.Mode()
+  if mode == "dps" then return EvaluateDps(unit) end
+  local tank = (mode == "pet") and (PetOut() and "pet" or nil) or "player"
   if not tank then return { kind = "none" } end -- "My pet" chosen, but no pet out
 
   local isTanking, status, pct = UnitDetailedThreatSituation(tank, unit)

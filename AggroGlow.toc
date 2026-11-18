@@ -3,7 +3,7 @@
 ## Notes: Multi-target threat tracker. Adds a glow to enemy nameplates you don't have aggro on.
 ## IconTexture: Interface\AddOns\AggroGlow\media\Logo
 ## Author: You
-## Version: 3.7.1
+## Version: 3.8.0
 ## X-Curse-Project-ID: 1811726
 ## SavedVariables: AggroGlowDB
 

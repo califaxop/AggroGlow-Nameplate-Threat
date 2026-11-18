@@ -30,6 +30,20 @@ ns.DEFAULTS = {
     unstable = { 1.00, 0.50, 0.05 },  -- unstable
     nothreat = { 1.00, 0.15, 0.10 },  -- no threat
   },
+  -- your role: "auto" (your group role in a group, your spec's if none; the tank when solo),
+  -- "tank", or "dps" (not the tank: damage or healer)
+  role = "auto",
+  -- when you're not the tank: same three glows, meaning safe (aggro) / close (unstable) / on you (nothreat)
+  statesDps = {
+    aggro    = { show = true, flash = false, alpha = 0.6 },
+    unstable = { show = true, flash = true,  alpha = 0.8 },
+    nothreat = { show = true, flash = true,  alpha = 0.8 },
+  },
+  colorsDps = {
+    aggro    = { 0.35, 1.00, 0.45 },  -- safe: it's on someone else
+    unstable = { 1.00, 0.50, 0.05 },  -- close: you're near pulling it
+    nothreat = { 1.00, 0.15, 0.10 },  -- on you: you pulled it
+  },
 }
 
 local function Copy(v)
@@ -67,11 +81,11 @@ function ns.LoadDB()
   for k, d in pairs(ns.DEFAULTS) do
     if db[k] == nil then db[k] = Copy(d) end
   end
-  for _, group in ipairs({ "colors", "states" }) do
+  for _, group in ipairs({ "colors", "states", "colorsDps", "statesDps" }) do
     for k, d in pairs(ns.DEFAULTS[group]) do
       if db[group][k] == nil then db[group][k] = Copy(d) end
-      if group == "states" then
-        for f, x in pairs(d) do if db.states[k][f] == nil then db.states[k][f] = x end end
+      if group == "states" or group == "statesDps" then
+        for f, x in pairs(d) do if db[group][k][f] == nil then db[group][k][f] = x end end
       end
     end
   end
