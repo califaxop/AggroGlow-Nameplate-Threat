@@ -10,7 +10,7 @@ local function UpdateUnit(unit)
   local st = S.Update(unit)
   -- "Only show in a party or raid": solo, nothing glows (preview still works)
   -- (your pet tanking counts too: that's usually solo)
-  if ns.db.onlyInGroup and not IsInGroup() and S.TankUnit() ~= "pet" and not ns.preview then st = { kind = "none" } end
+  if ns.db.onlyInGroup and not IsInGroup() and S.Mode() ~= "pet" and not ns.preview then st = { kind = "none" } end
   -- Preview mode: show a look ("secure" or "lost") on your target's nameplate.
   if ns.preview then
     local isTarget = UnitIsUnit(unit, "target")
@@ -121,7 +121,10 @@ SlashCmdList.AGGROGLOW = function(msg)
       local function show(v) return ns.isSecret(v) and "<hidden>" or tostring(v) end
       local n = 0
       local tank = S.TankUnit()
-      ns.Dbg("following:", tank == "pet" and "your pet" or tank == "player" and "you" or "nobody (no pet out)")
+      local mode = S.Mode()
+      ns.Dbg("following:", tank == "pet" and "your pet" or tank == "player" and "you" or "nobody (no pet out)",
+        "| glows:", mode == "pet" and "your pet's aggro" or mode == "dps" and "you, not the tank" or "you, the tank",
+        "| role:", S.Role(true) or "not set")
       for unit in R.Each() do
         n = n + 1
         local t, s, p = UnitDetailedThreatSituation(tank or "player", unit)

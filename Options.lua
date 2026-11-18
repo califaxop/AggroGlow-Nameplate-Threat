@@ -86,10 +86,10 @@ local function BuildPanel(panel)
 
   -- Whose aggro ------------------------------------------------------------
   at(UI.Section(panel, "Choose whose aggro to show", W_), 26, -54)
-  track(at(UI.Selector(panel, 330, { { "auto", "Auto: my pet when it's out, else me" }, { "me", "Me" }, { "pet", "My pet" } },
+  track(at(UI.Selector(panel, 330, { { "auto", "Auto: my pet when it tanks, else me" }, { "me", "Me" }, { "pet", "My pet" } },
     { function() return ns.db.tank or "auto" end, function(v) ns.db.tank = v end }, Changed,
     "Click, or use the arrows, to change it."), 26, -84))
-  local n1 = at(UI.Text(panel, "note", "With your pet as the tank, you and your group count as \"someone close\"."), 26, -112)
+  local n1 = at(UI.Text(panel, "note", "Auto follows your pet when it's out and you're solo, or in a group with no role set; otherwise you, as your role below says."), 26, -112)
   n1:SetWidth(W_)
 
   -- My role --------------------------------------------------------------------

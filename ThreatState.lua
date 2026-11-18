@@ -31,39 +31,53 @@ local function PetOut()
 end
 
 -- Whose aggro the glows follow: you, or your pet (setting "tank").
-function S.TankUnit()
-  local t = ns.db.tank or "auto"
-  if t == "me" then return "player" end
-  if t == "pet" then return PetOut() and "pet" or nil end
-  return PetOut() and "pet" or "player"
+function S.TankUnit() return S.FollowedUnit and S.FollowedUnit() end
+
+-- Your role: "tank", "dps" (not the tank) or nil (not decided). Set by hand, or on Auto: your
+-- group-finder role in a group. withSpec: also use your spec's role when no group role is set.
+function S.Role(withSpec)
+  local r = ns.db.role or "auto"
+  if r == "tank" then return "tank" end
+  if r == "dps" then return "dps" end
+  if not (IsInGroup and IsInGroup()) then return nil end
+  local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")
+  if role == "TANK" then return "tank" end
+  if role == "DAMAGER" or role == "HEALER" then return "dps" end
+  if withSpec then
+    local ok, spec = pcall(function() return GetSpecialization and GetSpecialization() end)
+    if ok and spec then
+      local okR, sr = pcall(GetSpecializationRole, spec)
+      if okR and sr then return (sr == "TANK") and "tank" or "dps" end
+    end
+  end
+  return nil
 end
 
--- Are you the tank? "tank" / "dps" as set, or on "auto": your group-finder role in a group (your
--- spec's role if none is assigned), and the tank when you're solo (enemies come to you anyway).
-function S.IsTankRole()
-  local r = ns.db.role or "auto"
-  if r == "tank" then return true end
-  if r == "dps" then return false end
-  if not (IsInGroup and IsInGroup()) then return true end
-  local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")
-  if role == "TANK" then return true end
-  if role == "DAMAGER" or role == "HEALER" then return false end
-  local ok, spec = pcall(function() return GetSpecialization and GetSpecialization() end)
-  if ok and spec then
-    local okR, sr = pcall(GetSpecializationRole, spec)
-    if okR and sr then return sr == "TANK" end
-  end
-  return true
-end
+-- You count as the tank unless your role says otherwise (solo, you are: enemies come to you).
+function S.IsTankRole() return S.Role(true) ~= "dps" end
 
 -- Which glows to show: "pet" (your pet's aggro), "tank" (yours, as the tank) or "dps" (yours, as
--- someone who doesn't want it). On Auto your pet counts unless you're in a group as a non-tank.
+-- someone who doesn't want it). The two settings only meet on "Whose aggro: Auto":
+--   My pet          -> your pet, whatever your role
+--   Me              -> you, as your role says (your pet is ignored)
+--   Auto, pet out   -> your pet when you're solo, or in a group with no role set (by hand or the
+--                      group finder; your spec doesn't count here); otherwise you, by your role
+--   Auto, no pet    -> you, by your role
 function S.Mode()
   local t = ns.db.tank or "auto"
   if t == "pet" then return "pet" end
-  local tankRole = S.IsTankRole()
-  if t == "auto" and PetOut() and (tankRole or not (IsInGroup and IsInGroup())) then return "pet" end
-  return tankRole and "tank" or "dps"
+  if t == "auto" and PetOut() then
+    if not (IsInGroup and IsInGroup()) then return "pet" end
+    if S.Role(false) == nil then return "pet" end
+  end
+  return S.IsTankRole() and "tank" or "dps"
+end
+
+-- The unit whose aggro the glows follow right now: "pet", "player", or nil ("My pet" with no pet out).
+function S.FollowedUnit()
+  local m = S.Mode()
+  if m == "pet" then return PetOut() and "pet" or nil end
+  return "player"
 end
 
 -- Everyone else whose threat could pull an enemy off the tank: you, your pet, your group.
