@@ -89,13 +89,13 @@ local function BuildPanel(panel)
   track(at(UI.Selector(panel, 330, { { "auto", "Auto: my pet when it tanks, else me" }, { "me", "Me" }, { "pet", "My pet" } },
     { function() return ns.db.tank or "auto" end, function(v) ns.db.tank = v end }, Changed,
     "Click, or use the arrows, to change it."), 26, -84))
-  local n1 = at(UI.Text(panel, "note", "Auto follows your pet when it's out and you're solo, or in a group with no role set; otherwise you, as your role below says."), 26, -112)
+  local n1 = at(UI.Text(panel, "note", "Auto follows your pet when it's out and no role is set (solo, or a group without roles); otherwise you, as your role below says."), 26, -112)
   n1:SetWidth(W_)
 
   -- My role --------------------------------------------------------------------
   at(UI.Text(panel, "line", "My role"), 26, -140)
-  track(at(UI.Selector(panel, 300, { { "auto", "Auto: my group role (tank when solo)" }, { "tank", "Tank" }, { "dps", "Not the tank (damage / healer)" } },
-    S("role"), Changed, "Auto uses your group-finder role in a group (your spec's role if none is assigned), and counts you as the tank when solo."), 120, -136))
+  track(at(UI.Selector(panel, 300, { { "auto", "Auto: my group-finder role" }, { "tank", "Tank" }, { "dps", "Not the tank (damage / healer)" } },
+    S("role"), Changed, "Auto uses the role you picked in the group finder. With no role set (solo, or a group without roles) you're treated as when solo: your pet when it's out, else you as the tank."), 120, -136))
   local n2 = at(UI.Text(panel, "note", "Not the tank: the glows show your own threat the other way round, green while it's on someone else, orange when you're close to pulling it, red when it's on you."), 26, -164)
   n2:SetWidth(W_)
 
