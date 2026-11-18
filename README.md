@@ -11,7 +11,7 @@ Features
 - Each glow can be shown or hidden, flashing or steady, with its own strength and color (by default stable is steady, the other two flash).
 - Works on every enemy you or your party are fighting, including ones a party member pulled.
 - Whose aggro: Auto (your pet when it's out and you're solo or in a group with no role set, else you), Me, or My pet.
-- My role: Auto (your group role, else your spec's, else your class's: warlock, mage, hunter, rogue and priest aren't the tank; the tank when solo), Tank, or Not the tank. When you're not the tank, the glows show your own threat the other way round: green while it's on someone else, orange when you're close to pulling it, red when it's on you. Each mode has its own glow settings.
+- My role: Auto (your group role, else your spec's, else your class's: warlock, mage, hunter, rogue, priest and shaman aren't the tank; the tank when solo), Tank, or Not the tank. When you're not the tank, the glows show your own threat the other way round: green while it's on someone else, orange when you're close to pulling it, red when it's on you. Each mode has its own glow settings.
 - Unstable threshold from 50% to 100% of pulling.
 - Optional "!" icon and threat % beside the nameplate, on the side you choose, each at an adjustable distance; the % can also show while aggro is stable (how close the next person is to pulling it).
 - Only show in a party or raid (or while your pet tanks).
@@ -30,7 +30,7 @@ Known limits
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
-- 3.8.1: "Whose aggro" and "My role" no longer get in each other's way: on Auto your pet is followed when you're solo or in a group with no role set (your spec doesn't override it), and as the group's tank the glows follow you. In a group with no role set, classes that can't tank (warlock, mage, hunter, rogue, priest) count as not the tank. "Only in a party" and /ag debug use the same rules.
+- 3.8.1: "Whose aggro" and "My role" no longer get in each other's way: on Auto your pet is followed when you're solo or in a group with no role set (your spec doesn't override it), and as the group's tank the glows follow you. In a group with no role set, classes that can't tank (warlock, mage, hunter, rogue, priest, shaman) count as not the tank. "Only in a party" and /ag debug use the same rules.
 - 3.8.0: Separate glows for when you're the tank and when you're not: as a damage dealer or healer the glows show your own threat the other way round (green while it's on someone else, orange when you're close to pulling it, red when it's on you). My role: Auto (your group role, tank when solo), Tank or Not the tank. Each mode has its own show / flash / strength / colors.
 - 3.7.1: Pet tanking: orange when you're catching up on your pet's threat now works in combat too (from your tooltip's threat line), and an enemy on you shows red even while your pet is winning it back.
 - 3.7.0: Threat % and glows now work when the game hides threat values in combat: read from the threat line in each enemy's tooltip. The orange glow also warns when you're about to pull an enemy. Choose which side of the nameplate the % sits on, and set how far from the nameplate the % and the "!" sit.
