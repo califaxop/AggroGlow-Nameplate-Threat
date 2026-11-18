@@ -25,10 +25,11 @@ Requirements
 - Enemy nameplates turned on.
 
 Known limits
-- When Forever hides threat values in combat, your own threat is read from each enemy's tooltip: have aggro, about to pull, and no aggro all work, with the %. "Someone is about to take it from you" needs the hidden values, so it only shows when the game gives them. With your pet as the tank, only "pet has it" (green) vs "doesn't" (red) work then.
+- When Forever hides threat values in combat, your own threat is read from each enemy's tooltip: have aggro, about to pull, and no aggro all work, with the %. "Someone is about to take it from you" needs the hidden values, so it only shows when the game gives them. With your pet as the tank, your own tooltip threat shows when you're catching up (orange) or have pulled it (red); "pet has it" (green) comes from the hidden values.
 - Nameplates in some instances may be off-limits to addons; no glow appears there.
 
 Changelogs
+- 3.7.1: Pet tanking: orange when you're catching up on your pet's threat now works in combat too (from your tooltip's threat line), and an enemy on you shows red even while your pet is winning it back.
 - 3.7.0: Threat % and glows now work when the game hides threat values in combat: read from the threat line in each enemy's tooltip. The orange glow also warns when you're about to pull an enemy. Choose which side of the nameplate the % sits on, and set how far from the nameplate the % and the "!" sit.
 - 3.6.0: Settings window restyled to match XP Planner and Spell Glow (FlareUI's look when installed).
 - 3.5.0: Cleaner settings window; choose which glows flash, each with its own strength; threat % can also show while aggro is stable.

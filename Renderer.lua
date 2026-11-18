@@ -249,6 +249,23 @@ function V.Render(plate, state)
     -- "am I tanking" flag. It can't tell stable from unstable, so tanking = stable here.
     local t = state.isTanking
     ShowFlash(f.unstable, false)
+    if state.warn and f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
+      -- your pet tanks and you're catching up (from the tooltip): orange while your pet has it,
+      -- red if it doesn't
+      ShowFlash(f.aggro, false)
+      ShowFlash(f.unstable, st.unstable.show, st.unstable.flash)
+      f.unstable.holder:SetAlphaFromBoolean(t, 1, 0)
+      ShowFlash(f.nothreat, st.nothreat.show, st.nothreat.flash)
+      f.nothreat.holder:SetAlphaFromBoolean(t, 0, 1)
+      HideGates(f)
+      if db.showPercent and state.pct then
+        local c = db.colors.unstable
+        f.pct:SetAlpha(1); f.pct:SetFormattedText("%d%%", state.pct); f.pct:SetTextColor(c[1], c[2], c[3]); f.pct:Show()
+      else
+        f.pct:Hide()
+      end
+      return
+    end
     if f.SetAlphaFromBoolean and (isSecret(t) or t ~= nil) then
       ShowFlash(f.aggro, st.aggro.show, st.aggro.flash)
       f.aggro.holder:SetAlphaFromBoolean(t, 1, 0)
@@ -276,6 +293,8 @@ function V.Render(plate, state)
 
   -- readable values: three states
   HideGates(f)
+  -- with your pet as the tank, "pulling" means it's on you and your pet is winning it back: still red
+  if kind == "pulling" and state.tank == "pet" then kind = "lost" end
   -- unstable: the tank's hold is slipping, or (pulling) it's about to land on the tank
   if kind == "insecure" and not st.unstable.show then kind = "secure" end
   if kind == "pulling" and not st.unstable.show then kind = "lost" end

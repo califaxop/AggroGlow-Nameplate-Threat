@@ -115,7 +115,17 @@ local function Evaluate(unit)
         return { kind = "lost", pct = tp, tank = tank, via = "tooltip" }
       end
     end
+    -- Your pet tanks: the tooltip's threat line is YOUR threat, i.e. how close you are to pulling
+    -- it off your pet. 100% = it's on you (red); at the warning % = you're catching up (orange
+    -- while your pet still has it); below that, the hidden "pet is tanking" flag decides.
     local _, others = OthersThreat(unit, tank)
+    if tank == "pet" then
+      local tp = S.TooltipPct(unit)
+      if tp and tp >= 100 then return { kind = "lost", pct = tp, tank = tank, via = "tooltip" } end
+      if tp and tp >= (ns.db.unstableAt or 80) then
+        return { kind = "hidden", isTanking = isTanking, others = others, tank = tank, warn = true, pct = tp, via = "tooltip" }
+      end
+    end
     return { kind = "hidden", isTanking = isTanking, others = others, tank = tank }
   end
   pct = Readable(pct) and pct or nil
