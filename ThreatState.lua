@@ -33,8 +33,11 @@ end
 -- Whose aggro the glows follow: you, or your pet (setting "tank").
 function S.TankUnit() return S.FollowedUnit and S.FollowedUnit() end
 
+local NON_TANK_CLASSES = { WARLOCK = true, MAGE = true, HUNTER = true, ROGUE = true, PRIEST = true }
+
 -- Your role: "tank", "dps" (not the tank) or nil (not decided). Set by hand, or on Auto: your
--- group-finder role in a group. withSpec: also use your spec's role when no group role is set.
+-- group-finder role in a group. withSpec: also use your spec's role when no group role is set,
+-- and your class when there's no spec role either (warlock, mage, hunter, rogue, priest can't tank).
 function S.Role(withSpec)
   local r = ns.db.role or "auto"
   if r == "tank" then return "tank" end
@@ -49,6 +52,9 @@ function S.Role(withSpec)
       local okR, sr = pcall(GetSpecializationRole, spec)
       if okR and sr then return (sr == "TANK") and "tank" or "dps" end
     end
+    -- no role from the group finder or your spec: classes that can't tank aren't the tank
+    local okC, _, class = pcall(UnitClass, "player")
+    if okC and NON_TANK_CLASSES[class] then return "dps" end
   end
   return nil
 end
