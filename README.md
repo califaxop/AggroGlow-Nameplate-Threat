@@ -2,14 +2,15 @@
 
 **See who has aggro, right on the enemy's nameplate.**
 
-A clean glow around each enemy's nameplate shows your threat at a glance: green when it's safe, orange when it's slipping (where the game allows it), red when it's gone wrong. Built for tanks, damage dealers, healers and pet classes alike.
+A clean glow around each enemy's nameplate shows your threat at a glance. Tanks see who holds it; damage dealers and healers see how close they are to pulling it. Built for tanks, damage dealers, healers and pet classes alike.
 
 ## Highlights
-- **Three glows:** stable, unstable (flashing), no threat (flashing). Colors, flash and strength are yours to set.
-- **Tank or not:** as a tank, green means *you* hold it. As damage or healer, the colors flip: green while it's on someone else, red when you pull it.
+- **Tank:** one glow while you hold aggro, another (flashing) when it's on someone else.
+- **Not the tank:** safe while the tank has it, close when you near the warning %, on you when you pull it. Plus your threat % on either side of the nameplate.
+- **Every glow is yours to tune:** color, on/off, flash, strength and flash interval.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
 - **Works in combat:** when the game hides threat in a group, it reads your own threat from the enemy's tooltip (on enemies you have threat on).
-- **Threat %:** optional, on either side of the nameplate, at your chosen distance (up to 100%). Optional "!" warning icon too.
+- **Threat %:** for when you're not the tank, at your chosen distance (up to 100%). Optional "!" warning icon too.
 - **Smart role:** uses your group-finder role; with none set, it acts like solo.
 
 ## Quick start
@@ -24,14 +25,12 @@ A clean glow around each enemy's nameplate shows your threat at a glance: green 
 | `/ag debug` | Show what threat data the game gives right now |
 
 ## Good to know
-- **In a group, the game hides threat values.** The glows still work, with two limits:
-  - Tanks: "someone is about to take aggro from you" (orange) can't be shown, only whether you have aggro.
-  - The % shows only on enemies you have threat on (it comes from their tooltip).
-- Solo, everything works, including exact %.
+- In a group the game hides threat values, so your % comes from the enemy's tooltip: it shows on enemies you have threat on.
+- Tanks see holding / lost only: the game doesn't let addons see a party member closing in.
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
 ## Recent changes
-- **3.8.2:** Threat % shows at most 100%.
+- **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100%.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.
 - **3.8.0:** Separate glows for tank and not-the-tank, with a My role setting.
 - **3.7.1:** Pet tanking: orange when you're catching up, red when it's on you.

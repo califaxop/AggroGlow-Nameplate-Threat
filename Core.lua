@@ -7,10 +7,12 @@ function ns.Readable(v) return v ~= nil and not ns.isSecret(v) end
 
 ns.DEFAULTS = {
   -- the three glows: shown or not, flashing or steady, and how strong
+  -- (speed: seconds per flash)
+  -- as the tank: holding / lost; "unstable" is only used while your pet tanks (you catching up)
   states = {
-    aggro    = { show = true, flash = false, alpha = 0.6 },  -- stable: the tank has aggro, safely
-    unstable = { show = true, flash = true,  alpha = 0.8 },  -- unstable: someone is close to pulling it
-    nothreat = { show = true, flash = true,  alpha = 0.8 },  -- no threat: engaged, but not on the tank
+    aggro    = { show = true, flash = false, alpha = 0.6, speed = 0.50 },  -- holding: you (or your pet) have aggro
+    unstable = { show = true, flash = true,  alpha = 0.8, speed = 0.35 },  -- pet tanking: you're catching up
+    nothreat = { show = true, flash = true,  alpha = 0.8, speed = 0.25 },  -- lost: it's on someone else
   },
   unstableAt        = 80,    -- unstable once someone has this % of the threat needed to pull it off you
   showIcon          = false, -- "!" while aggro isn't stable
@@ -23,7 +25,6 @@ ns.DEFAULTS = {
   iconGapAfterPct   = 6,       -- ...or from the end of the %, when the % is on the right too
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
-  flashSpeed        = 0.35,  -- seconds per flash (no threat flashes a bit faster, stable a bit slower)
   flareStyle        = true,  -- settings window in FlareUI's style when FlareUI is installed
   colors = {
     aggro    = { 0.35, 1.00, 0.45 },  -- stable
@@ -35,9 +36,9 @@ ns.DEFAULTS = {
   role = "auto",
   -- when you're not the tank: same three glows, meaning safe (aggro) / close (unstable) / on you (nothreat)
   statesDps = {
-    aggro    = { show = true, flash = false, alpha = 0.6 },
-    unstable = { show = true, flash = true,  alpha = 0.8 },
-    nothreat = { show = true, flash = true,  alpha = 0.8 },
+    aggro    = { show = true, flash = false, alpha = 0.6, speed = 0.50 },
+    unstable = { show = true, flash = true,  alpha = 0.8, speed = 0.35 },
+    nothreat = { show = true, flash = true,  alpha = 0.8, speed = 0.25 },
   },
   colorsDps = {
     aggro    = { 0.35, 1.00, 0.45 },  -- safe: it's on someone else
@@ -76,6 +77,16 @@ function ns.LoadDB()
       nothreat = { show = true, flash = true, alpha = db.glowAlpha or 0.8 },
     }
     db.showAggroGlow, db.showUnstable, db.aggroAlpha, db.glowAlpha = nil, nil, nil, nil
+  end
+  if db.flashSpeed then
+    -- one shared flash speed -> one per glow (stable was 1.5x slower, no threat 0.7x)
+    local mult = { aggro = 1.5, unstable = 1, nothreat = 0.7 }
+    for _, set in ipairs({ db.states, db.statesDps }) do
+      for k, m in pairs(mult) do
+        if set and set[k] and set[k].speed == nil then set[k].speed = math.floor(db.flashSpeed * m * 100 + 0.5) / 100 end
+      end
+    end
+    db.flashSpeed = nil
   end
   db.version = 5
   for k, d in pairs(ns.DEFAULTS) do

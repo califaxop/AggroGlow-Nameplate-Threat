@@ -222,10 +222,10 @@ local function Style(f, dps)
   PlaceText(f)
   local db = ns.db
   local st, col = Sets(dps)
-  StyleFlash(f.aggro, col.aggro, st.aggro.alpha, db.flashSpeed * 1.5, false)
-  StyleFlash(f.unstable, col.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon)
-  StyleFlash(f.nothreat, col.nothreat, st.nothreat.alpha, db.flashSpeed * 0.7, db.showIcon)
-  for _, g in ipairs(f.gates) do StyleFlash(g.flash, col.unstable, st.unstable.alpha, db.flashSpeed, db.showIcon) end
+  StyleFlash(f.aggro, col.aggro, st.aggro.alpha, st.aggro.speed or 0.5, false)
+  StyleFlash(f.unstable, col.unstable, st.unstable.alpha, st.unstable.speed or 0.35, db.showIcon)
+  StyleFlash(f.nothreat, col.nothreat, st.nothreat.alpha, st.nothreat.speed or 0.25, db.showIcon)
+  for _, g in ipairs(f.gates) do StyleFlash(g.flash, col.unstable, st.unstable.alpha, st.unstable.speed or 0.35, db.showIcon) end
 end
 
 -- on: the glow is visible; flashing: it pulses (else it stays steady)
@@ -299,9 +299,9 @@ function V.Render(plate, state)
       f.aggro.holder:SetAlphaFromBoolean(t, 1, 0)
       ShowFlash(f.nothreat, st.nothreat.show, st.nothreat.flash)
       f.nothreat.holder:SetAlphaFromBoolean(t, 0, 1)
-      -- unstable from party members' hidden threat % (if the client supports it)
+      -- (as the tank yourself it's just holding / lost; the old "someone's close" gates are off)
       local others = state.others or {}
-      if st.unstable.show and #others > 0 and ns.curveState ~= "unsupported" then
+      if state.tank == "pet" and st.unstable.show and #others > 0 and ns.curveState ~= "unsupported" then
         f.hidTank:Show()
         f.hidTank:SetAlphaFromBoolean(t, 1, 0)
         for i, g in ipairs(f.gates) do
@@ -323,6 +323,11 @@ function V.Render(plate, state)
   HideGates(f)
   -- with your pet as the tank, "pulling" means it's on you and your pet is winning it back: still red
   if kind == "pulling" and state.tank == "pet" then kind = "lost" end
+  -- you're the tank: just holding it or not
+  local meTank = not dps and state.tank == "player"
+  if meTank then
+    if kind == "insecure" then kind = "secure" elseif kind == "pulling" then kind = "lost" end
+  end
   -- unstable: the tank's hold is slipping, or (pulling) it's about to land on the tank
   if kind == "insecure" and not st.unstable.show then kind = "secure" end
   if kind == "pulling" and not st.unstable.show then kind = "lost" end
@@ -333,10 +338,9 @@ function V.Render(plate, state)
   ShowFlash(f.unstable, unstable, st.unstable.flash)
   ShowFlash(f.nothreat, noThreat and st.nothreat.show, st.nothreat.flash)
 
-  -- threat %: while the tank holds aggro the game always says 100%, so show how close the
-  -- next person is to pulling it instead; otherwise the tank's own %.
+  -- threat %: yours when you're not the tank; with a pet tanking, how close you are to pulling it
   local pct, color
-  if db.showPercent then
+  if db.showPercent and not meTank then -- the % is for when you're not the tank (or your pet tanks)
     if noThreat then pct, color = state.pct, col.nothreat
     elseif kind == "pulling" then pct, color = state.pct, col.unstable
     elseif unstable then pct, color = state.closest or state.pct, col.unstable

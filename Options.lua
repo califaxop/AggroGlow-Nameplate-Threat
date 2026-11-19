@@ -63,9 +63,9 @@ end
 -- Panel
 ---------------------------------------------------------------------------
 local STATES = {
-  { "aggro",    "Stable",    "The tank has aggro, safely." },
-  { "unstable", "Unstable",  "Someone is close to pulling it off the tank, or it's about to land on the tank (the tank is at or above the warning % of pulling it)." },
-  { "nothreat", "No threat", "Engaged with you or your group, but not on the tank, and the tank isn't close to pulling it." },
+  { "aggro",    "Holding",       "You have aggro (or your pet does, when it tanks)." },
+  { "unstable", "Pet: catching up", "Only while your pet tanks: you're at or above the warning % of pulling it off your pet." },
+  { "nothreat", "Lost",          "It's attacking someone else." },
 }
 -- the same three glows when you're not the tank
 local STATES_DPS = {
@@ -96,7 +96,7 @@ local function BuildPanel(panel)
   at(UI.Text(panel, "line", "My role"), 26, -140)
   track(at(UI.Selector(panel, 300, { { "auto", "Auto: my group-finder role" }, { "tank", "Tank" }, { "dps", "Not the tank (damage / healer)" } },
     S("role"), Changed, "Auto uses the role you picked in the group finder. With no role set (solo, or a group without roles) you're treated as when solo: your pet when it's out, else you as the tank."), 120, -136))
-  local n2 = at(UI.Text(panel, "note", "Not the tank: the glows show your own threat the other way round, green while it's on someone else, orange when you're close to pulling it, red when it's on you."), 26, -164)
+  local n2 = at(UI.Text(panel, "note", "Tank: green while you hold it, red (flashing) when it's on someone else. Not the tank: green while the tank has it, orange when you're close to pulling it, red when you have."), 26, -164)
   n2:SetWidth(W_)
 
   -- Glows ------------------------------------------------------------------
@@ -107,10 +107,11 @@ local function BuildPanel(panel)
     { function() return editSet end, function(v) editSet = v end },
     function() for _, f in ipairs(rowsRefresh) do f() end end,
     "Each mode has its own glows. Click to switch which one you're editing."), 26, G0 - 30))
-  local COL_SHOW, COL_FLASH, COL_STR = 196, 246, 296
+  local COL_SHOW, COL_FLASH, COL_STR, COL_INT = 150, 188, 226, 330
   at(UI.Text(panel, "note", "Show"), 26 + COL_SHOW - 4, G0 - 60)
   at(UI.Text(panel, "note", "Flash"), 26 + COL_FLASH - 4, G0 - 60)
   at(UI.Text(panel, "note", "Strength"), 26 + COL_STR, G0 - 60)
+  at(UI.Text(panel, "note", "Interval"), 26 + COL_INT, G0 - 60)
   local y = G0 - 78
   for i, st in ipairs(STATES) do
     local key = st[1]
@@ -126,30 +127,34 @@ local function BuildPanel(panel)
       GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetText(l[2]); GameTooltip:AddLine(l[3], 1, 1, 1, true); GameTooltip:Show()
     end)
     hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    local str = track(at(UI.Slider(panel, "", 124, 0.05, 1, 0.05,
+    local str = track(at(UI.Slider(panel, "", 92, 0.05, 1, 0.05,
       { function() return s().alpha end, function(v) s().alpha = v end }, pctFmt, Changed), 26 + COL_STR, y + 14))
-    local flash = track(at(UI.Check(panel, "", { function() return s().flash end, function(v) s().flash = v end }, 20, Changed),
-      26 + COL_FLASH, y - 2))
+    local int = track(at(UI.Slider(panel, "", 92, 0.1, 1.5, 0.05,
+      { function() return s().speed or 0.35 end, function(v) s().speed = v end },
+      function(v) return format("%.2fs", v) end, Changed), 26 + COL_INT, y + 14))
     local show
+    local flash = track(at(UI.Check(panel, "", { function() return s().flash end, function(v) s().flash = v end }, 20,
+      function() Changed(); if show then show.Refresh() end end), 26 + COL_FLASH, y - 2))
     show = track(at(UI.Check(panel, "", { function() return s().show end, function(v) s().show = v end }, 20, function()
       Changed(); show.Refresh()
     end), 26 + COL_SHOW, y - 2))
     local r = show.Refresh
-    show.Refresh = function() r(); flash.SetActive(s().show); str:SetAlpha(s().show and 1 or 0.4) end
+    show.Refresh = function()
+      r(); flash.SetActive(s().show); str:SetAlpha(s().show and 1 or 0.4)
+      int:SetAlpha((s().show and s().flash) and 1 or 0.4)
+    end
     -- switching which settings are edited: relabel and reload this row
     rowsRefresh[#rowsRefresh + 1] = function()
-      name:SetText(label()[2]); sw.Refresh(); show.Refresh(); flash.Refresh(); str.Refresh()
+      name:SetText(label()[2]); sw.Refresh(); show.Refresh(); flash.Refresh(); str.Refresh(); int.Refresh()
     end
     local rr = rowsRefresh[#rowsRefresh]
     local sr = sw.Refresh
     sw.Refresh = function() sr(); name:SetText(label()[2]) end
     y = y - 32
   end
-  track(at(UI.Slider(panel, "Flash speed", 196, 0.15, 1, 0.05, S("flashSpeed"),
-    function(v) return format("%.2fs per flash", v) end, Changed), 26, y - 6))
-  track(at(UI.Slider(panel, "Warn at", 200, 50, 100, 5,
+  track(at(UI.Slider(panel, "Warn at (not the tank, or pet tanking)", 300, 50, 100, 5,
     { function() return ns.db.unstableAt end, function(v) ns.db.unstableAt = math.floor(v + 0.5) end },
-    function(v) return math.floor(v + 0.5) .. "% of pulling" end, Changed), 246, y - 6))
+    function(v) return math.floor(v + 0.5) .. "% of pulling" end, Changed), 26, y - 6))
 
   -- Display ----------------------------------------------------------------
   y = y - 56
@@ -171,7 +176,7 @@ local function BuildPanel(panel)
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
-  local stablePct = UI.Check(panel, "Also while stable (or safe, when not the tank)", S("showPercentStable"), 300, Changed)
+  local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 300, Changed)
   local pct
   pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), 250, function()
     Changed(); pct.Refresh(); icon.Refresh()
@@ -185,7 +190,7 @@ local function BuildPanel(panel)
     pr(); stablePct.SetActive(ns.db.showPercent); side.SetActive(ns.db.showPercent); side.Refresh()
     if dist then dist:SetAlpha(ns.db.showPercent and 1 or 0.4) end
   end
-  local n2 = at(UI.Text(panel, "note", "Read from the game's threat values, or from the threat line in each enemy's tooltip when the game hides them in combat. While you hold aggro, it's how close the next person is when the game shows that, otherwise 100%."), 72, y - 142)
+  local n2 = at(UI.Text(panel, "note", "Your own threat, when you're not the tank (or your pet tanks). In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 72, y - 142)
   n2:SetWidth(W_ - 46)
   -- where the % sits: its distance from the bar, kept per side
   local function sideKey() return ns.db.percentSide == "right" and "percentOffsetRight" or "percentOffsetLeft" end
