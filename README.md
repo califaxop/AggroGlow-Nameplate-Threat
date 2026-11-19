@@ -1,15 +1,15 @@
 # AggroGlow: Nameplate Threat
 
-**See who's about to lose aggro, right on the enemy's nameplate.**
+**See who has aggro, right on the enemy's nameplate.**
 
-A clean glow around each enemy's nameplate shows your threat at a glance: green when it's safe, orange when it's slipping, red when it's gone wrong. Built for tanks, damage dealers, healers and pet classes alike.
+A clean glow around each enemy's nameplate shows your threat at a glance: green when it's safe, orange when it's slipping (where the game allows it), red when it's gone wrong. Built for tanks, damage dealers, healers and pet classes alike.
 
 ## Highlights
 - **Three glows:** stable, unstable (flashing), no threat (flashing). Colors, flash and strength are yours to set.
 - **Tank or not:** as a tank, green means *you* hold it. As damage or healer, the colors flip: green while it's on someone else, red when you pull it.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
-- **Works in combat:** reads your threat from the enemy's tooltip when the game hides it.
-- **Threat %:** optional, on either side of the nameplate, at your chosen distance. Optional "!" warning icon too.
+- **Works in combat:** when the game hides threat in a group, it reads your own threat from the enemy's tooltip (on enemies you have threat on).
+- **Threat %:** optional, on either side of the nameplate, at your chosen distance (up to 100%). Optional "!" warning icon too.
 - **Smart role:** uses your group-finder role; with none set, it acts like solo.
 
 ## Quick start
@@ -24,7 +24,10 @@ A clean glow around each enemy's nameplate shows your threat at a glance: green 
 | `/ag debug` | Show what threat data the game gives right now |
 
 ## Good to know
-- When the game hides threat in combat, "someone is about to take aggro from you" can't be shown; the other glows still work.
+- **In a group, the game hides threat values.** The glows still work, with two limits:
+  - Tanks: "someone is about to take aggro from you" (orange) can't be shown, only whether you have aggro.
+  - The % shows only on enemies you have threat on (it comes from their tooltip).
+- Solo, everything works, including exact %.
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
 ## Recent changes
