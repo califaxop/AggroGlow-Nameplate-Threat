@@ -10,7 +10,7 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 - **Every glow is yours to tune:** color, on/off, flash, strength and flash interval.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
 - **Works in combat:** when the game hides threat in a group, it reads your own threat from the enemy's tooltip (on enemies you have threat on).
-- **Threat %:** for when you're not the tank, left of the nameplate, clear of debuff icons (up to 100%). Optional "!" warning icon on the left.
+- **Threat %:** for when you're not the tank, left of the nameplate, clear of debuff icons and Questie's quest icon (up to 100%). Optional "!" warning icon on the left.
 - **Smart role:** uses your group-finder role; with none set, it acts like solo.
 
 ## Quick start

@@ -219,19 +219,43 @@ local function StyleFlash(fl, c, alpha, speed, showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
--- the % in a small box left of the health bar; the "!" left of that (or of the bar, without the %)
-local function PlaceText(f)
+-- Questie's quest icon on this nameplate, if it's showing one: a 16 px frame (strata HIGH) with
+-- an .Icon texture that Questie parents to the plate, left of the health bar.
+local function QuestieIcon(plate)
+  if not QuestieLoader then return nil end
+  local ok, kids = pcall(function() return { plate:GetChildren() } end)
+  if not ok then return nil end
+  for _, c in ipairs(kids) do
+    if c.Icon and c:IsShown() and c:GetFrameStrata() == "HIGH" then return c end
+  end
+end
+
+-- the % in a small box left of the health bar (left of Questie's quest icon when there is one);
+-- the "!" left of that (or of the bar, without the %)
+local function PlaceText(f, qicon)
   local db = ns.db
   local gap, ix, withPct = db.percentGap or 6, db.iconOffsetX or 4, db.showPercent and true or false
-  local key = gap .. ":" .. ix .. ":" .. tostring(withPct)
+  -- step past Questie's icon so neither covers the other: how far its left edge reaches past the bar's
+  local extra = 0
+  if qicon then
+    local ok, bl, ql = pcall(function() return f.bar:GetLeft(), qicon:GetLeft() end)
+    if ok and type(bl) == "number" and type(ql) == "number" and not isSecret(bl) and not isSecret(ql) then
+      local bs, qs = f.bar:GetEffectiveScale(), qicon:GetEffectiveScale()
+      extra = math.max(0, math.floor((bl * bs - ql * qs) / bs + 0.5))
+    else
+      extra = 20 -- Questie's default spot: about 17 px out, 16 px wide
+    end
+  end
+  local key = gap .. ":" .. ix .. ":" .. tostring(withPct) .. ":" .. extra
   if f.placedKey == key then return end
   f.placedKey = key
+  local x = gap + extra
   f.pctBox:ClearAllPoints()
-  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -gap, 0)
+  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -x, 0)
   local function placeIcon(fl)
     fl.icon:ClearAllPoints()
     if withPct then fl.icon:SetPoint("RIGHT", f.pctBox, "LEFT", -ix, 0)
-    else fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -(gap + ix), 0) end
+    else fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -(x + ix), 0) end
   end
   for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl) end
   for _, g in ipairs(f.gates) do placeIcon(g.flash) end
@@ -244,8 +268,8 @@ local function Sets(dps)
   return db.states, db.colors
 end
 
-local function Style(f, dps)
-  PlaceText(f)
+local function Style(f, dps, plate)
+  PlaceText(f, plate and QuestieIcon(plate))
   StyleBox(f.pctBox)
   local db = ns.db
   local st, col = Sets(dps)
@@ -292,7 +316,7 @@ function Render(plate, state)
   local f = indicators[plate]
   if not f then f = Create(plate); indicators[plate] = f end
   local dps = state and state.dps or false
-  Style(f, dps)
+  Style(f, dps, plate)
   local db = ns.db
   local st, col = Sets(dps)
   local kind = state and state.kind or "none"
