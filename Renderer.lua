@@ -16,7 +16,6 @@ local function Cap(v)
   if isSecret(v) or type(v) ~= "number" then return v end
   return v > 100 and 100 or v
 end
-local TEXT_LEVEL = 30   -- % and "!" sit this many frame levels above the health bar (over debuff icons)
 
 local function HealthBarOf(plate)
   local uf = plate.UnitFrame
@@ -99,11 +98,7 @@ local function MakeFlash(f, bar)
   anim:SetLooping("BOUNCE")
   local a = anim:CreateAnimation("Alpha")
   a:SetFromAlpha(1); a:SetToAlpha(0.15); a:SetSmoothing("IN_OUT")
-  -- text sits on its own raised layer so the plate's debuff icons can't cover it; still a child
-  -- of holder, so it shows and hides with the glow
-  local top = CreateFrame("Frame", nil, holder)
-  top:SetAllPoints(); top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  local icon = top:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  local icon = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   icon:SetPoint("LEFT", bar, "RIGHT", 22, 0)
   icon:SetText("!")
   holder:Hide()
@@ -171,9 +166,7 @@ local function Create(plate)
   end
   f.hidTank:Hide()
 
-  f.top = CreateFrame("Frame", nil, f) -- above the plate's debuff icons
-  f.top:SetAllPoints(); f.top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  f.pct = f.top:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  f.pct = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.bar = bar
 
 
@@ -361,9 +354,9 @@ function V.TextInfo(plate)
   local f = plate and indicators[plate]
   if not f then return "no indicator" end
   local ok, txt = pcall(function() return f.pct:GetText() end)
-  return format("%% shown=%s visible=%s text=%s alpha=%.2f levels bar/top=%s/%s",
+  return format("%% shown=%s visible=%s text=%s alpha=%.2f levels bar/glow=%s/%s",
     tostring(f.pct:IsShown()), tostring(f.pct:IsVisible()), ok and tostring(txt) or "<hidden>",
-    f.pct:GetEffectiveAlpha() or -1, tostring(f.bar:GetFrameLevel()), tostring(f.top:GetFrameLevel()))
+    (f.pct.GetEffectiveAlpha and f.pct:GetEffectiveAlpha() or f.pct:GetAlpha()) or -1, tostring(f.bar:GetFrameLevel()), tostring(f:GetFrameLevel()))
 end
 
 function V.Hide(plate)
