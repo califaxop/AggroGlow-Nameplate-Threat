@@ -75,6 +75,35 @@ SlashCmdList.AGGROGLOW = function(msg)
   elseif cmd == "aggro" then
     db.states.aggro.show = not db.states.aggro.show
     ns.Print("stable glow " .. (db.states.aggro.show and "on" or "off"))
+  elseif cmd == "tank" then
+    -- probe: can an addon tell "I'm tanking but losing it" (threat status 2) while values are hidden?
+    local sec = ns.isSecret
+    local function show(v) if sec(v) then return "hidden" end return tostring(v) end
+    local function try(label, fn)
+      local ok, a, b, c = pcall(fn)
+      if not ok then print("  " .. label .. ": error (" .. tostring(a):gsub("^.-:%d+: ", "") .. ")")
+      else print("  " .. label .. ": " .. show(a) .. (b ~= nil and (", " .. show(b)) or "") .. (c ~= nil and (", " .. show(c)) or "")) end
+    end
+    local u = "target"
+    if not UnitExists(u) then ns.Print("target a mob you're tanking first"); return end
+    ns.Print("losing-aggro probe on your target (" .. (InCombatLockdown() and "in combat" or "out of combat") .. ", " .. (IsInGroup() and "in a group" or "solo") .. "):")
+    try("UnitThreatSituation", function() return UnitThreatSituation("player", u) end)
+    try("status == 2 test", function() local s = UnitThreatSituation("player", u); return s == 2 end)
+    try("status as boolean via SetAlphaFromBoolean", function()
+      local t = AG_ProbeFrame or CreateFrame("Frame", "AG_ProbeFrame"); t:SetAlphaFromBoolean(UnitThreatSituation("player", u) == 2, 1, 0); return t:GetAlpha() end)
+    try("GetThreatStatusColor(status)", function() return GetThreatStatusColor(UnitThreatSituation("player", u) or 0) end)
+    try("UnitThreatPercentageOfLead", function() return UnitThreatPercentageOfLead and UnitThreatPercentageOfLead("player", u) end)
+    try("mob is targeting me", function() return UnitIsUnit(u .. "target", "player") end)
+    try("mob's target name", function() return UnitName(u .. "target") end)
+    local plate = C_NamePlate and C_NamePlate.GetNamePlateForUnit and C_NamePlate.GetNamePlateForUnit(u)
+    local hb = plate and plate.UnitFrame and (plate.UnitFrame.healthBar or plate.UnitFrame.HealthBar)
+    try("nameplate health bar color", function() return hb and hb:GetStatusBarColor() end)
+    local ti = TargetFrame and (TargetFrame.threatIndicator or (TargetFrame.TargetFrameContainer and TargetFrame.TargetFrameContainer.Flash))
+    try("target frame threat glow shown", function() return ti and ti:IsShown() end)
+    try("target frame threat glow color", function() return ti and ti:GetVertexColor() end)
+    try("threat numeric text (target frame)", function()
+      local t = TargetFrameNumericalThreat or (TargetFrame and TargetFrame.threatNumericIndicator)
+      return t and t:IsShown(), t and t.text and t.text:GetText() end)
   elseif cmd == "tip" then
     -- can an addon read the threat line Blizzard puts in unit tooltips? (data API, and the tooltip on screen)
     local sec = ns.isSecret
@@ -138,7 +167,7 @@ SlashCmdList.AGGROGLOW = function(msg)
         "| hidden threat % checks:", ns.curveState)
     end
   else
-    ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag debug")
+    ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag debug  -  /ag tank")
     return
   end
   UpdateAll()
