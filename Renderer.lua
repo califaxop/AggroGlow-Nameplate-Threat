@@ -11,6 +11,7 @@ ns.Renderer = V
 
 local isSecret = ns.isSecret
 local indicators = {}   -- plate -> indicator frame
+local TEXT_LEVEL = 30   -- % and "!" sit this many frame levels above the health bar (over debuff icons)
 
 -- show at most 100%; a hidden (secret) value can't be compared, so it passes through as is
 local function Cap(v)
@@ -99,7 +100,11 @@ local function MakeFlash(f, bar)
   anim:SetLooping("BOUNCE")
   local a = anim:CreateAnimation("Alpha")
   a:SetFromAlpha(1); a:SetToAlpha(0.15); a:SetSmoothing("IN_OUT")
-  local icon = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  -- the "!" sits on its own raised layer so the plate's debuff icons can't cover it; still a
+  -- child of holder, so it shows and hides with its glow
+  local top = CreateFrame("Frame", nil, holder)
+  top:SetAllPoints(); top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
+  local icon = top:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   icon:SetPoint("LEFT", bar, "RIGHT", 22, 0)
   icon:SetText("!")
   holder:Hide()
@@ -167,7 +172,9 @@ local function Create(plate)
   end
   f.hidTank:Hide()
 
-  f.pct = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  f.top = CreateFrame("Frame", nil, f) -- above the plate's debuff icons
+  f.top:SetAllPoints(); f.top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
+  f.pct = f.top:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.bar = bar
 
 
