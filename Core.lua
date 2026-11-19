@@ -20,6 +20,7 @@ ns.DEFAULTS = {
   showPercentStable = false, -- ...also while aggro is stable
   percentNudgeX     = 0,       -- fine-tune the % box under the level box (px)
   percentNudgeY     = 0,
+  percentBgAlpha    = 0.8,     -- the % box's background opacity
   iconOffsetX       = 24,      -- the "!": distance left of the health bar (past the elite dragon)
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"

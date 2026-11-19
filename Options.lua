@@ -183,15 +183,18 @@ local function BuildPanel(panel)
     function(v) return v .. " px" end, Changed), 50, y - 180))
   ny = track(at(UI.Slider(panel, "up / down", 160, -20, 20, 1, S("percentNudgeY"),
     function(v) return v .. " px" end, Changed), 250, y - 180))
+  local bga = track(at(UI.Slider(panel, "% background opacity", 180, 0, 1, 0.05, S("percentBgAlpha"),
+    function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 222))
   local pr = pct.Refresh
   pct.Refresh = function()
     pr(); stablePct.SetActive(ns.db.showPercent)
-    nx:SetAlpha(ns.db.showPercent and 1 or 0.4); ny:SetAlpha(ns.db.showPercent and 1 or 0.4)
+    local a = ns.db.showPercent and 1 or 0.4
+    nx:SetAlpha(a); ny:SetAlpha(a); bga:SetAlpha(a)
   end
-  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 232))
+  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 268))
 
   -- Preview ----------------------------------------------------------------
-  y = y - 268
+  y = y - 304
   at(UI.Section(panel, "Preview on your target", W_), 26, y); y = y - 32
   local buttons = {}
   local MODES = { { "secure", "Stable" }, { "insecure", "Unstable" }, { "lost", "No threat" } }

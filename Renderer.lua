@@ -90,23 +90,31 @@ end
 
 -- A flashing glow: the holder's alpha is controlled by state (or by the client when values
 -- are hidden); only the inner frame flashes, so the two never fight each other.
--- A small box in the nameplate's own style (like its level box): dark fill, thin grey border.
-local BOX_BORDER = { 0.55, 0.55, 0.55, 0.9 }
-local function MakeBox(parent, w, h)
-  local b = CreateFrame("Frame", nil, parent)
-  b:SetSize(w, h)
-  local bg = b:CreateTexture(nil, "BACKGROUND")
-  bg:SetAllPoints(); bg:SetColorTexture(0, 0, 0, 0.75)
-  local function edge(p1, p2, horiz)
-    local t = b:CreateTexture(nil, "BORDER")
-    t:SetColorTexture(BOX_BORDER[1], BOX_BORDER[2], BOX_BORDER[3], BOX_BORDER[4])
-    t:SetPoint(p1); t:SetPoint(p2)
-    if horiz then t:SetHeight(1) else t:SetWidth(1) end
+-- The % box: XP Planner's tracker look. With FlareUI, its dark dialog background and bronze
+-- frame border; without, a dark fill with a thin brown border. Background opacity is a setting.
+local DIALOG_BG = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark"
+local FLARE_BRONZE = { 0.65, 0.49, 0.27 }
+local PLAIN_BORDER = { 0.40, 0.33, 0.22 }
+local function StyleBox(b)
+  local a = ns.db.percentBgAlpha or 0.8
+  local edge = ns.UI and ns.UI.FlareBorder and ns.UI.FlareBorder()
+  local key = tostring(edge) .. a
+  if b.styleKey == key then return end
+  b.styleKey = key
+  if edge then
+    b:SetBackdrop({ bgFile = DIALOG_BG, edgeFile = edge, edgeSize = 10, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
+    b:SetBackdropColor(1, 1, 1, a)
+    b:SetBackdropBorderColor(FLARE_BRONZE[1], FLARE_BRONZE[2], FLARE_BRONZE[3], 1)
+  else
+    b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
+      edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 } })
+    b:SetBackdropColor(0, 0, 0, a)
+    b:SetBackdropBorderColor(PLAIN_BORDER[1], PLAIN_BORDER[2], PLAIN_BORDER[3], 1)
   end
-  edge("TOPLEFT", "TOPRIGHT", true); edge("BOTTOMLEFT", "BOTTOMRIGHT", true)
-  edge("TOPLEFT", "BOTTOMLEFT", false); edge("TOPRIGHT", "BOTTOMRIGHT", false)
-  return b
 end
+
+-- the "!": the game's quest-available icon, tinted to the glow's colour
+local QUEST_ICON = "Interface\\GossipFrame\\AvailableQuestIcon"
 
 local function MakeFlash(f, bar)
   local holder = CreateFrame("Frame", nil, f)
@@ -122,12 +130,12 @@ local function MakeFlash(f, bar)
   -- child of holder, so it shows and hides with its glow
   local top = CreateFrame("Frame", nil, holder)
   top:SetAllPoints(); top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  local box = MakeBox(top, 14, 16) -- left of the nameplate
-  local icon = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  icon:SetPoint("CENTER", 0, 0)
-  icon:SetText("!")
+  local icon = top:CreateTexture(nil, "OVERLAY")
+  icon:SetSize(18, 18)
+  icon:SetTexture(QUEST_ICON)
+  icon:SetDesaturated(true) -- grey, so the glow colour tints it cleanly
   holder:Hide()
-  return { holder = holder, glow = glow, anim = anim, alpha = a, icon = icon, iconBox = box }
+  return { holder = holder, glow = glow, anim = anim, alpha = a, icon = icon }
 end
 
 ---------------------------------------------------------------------------
@@ -193,7 +201,8 @@ local function Create(plate)
 
   f.top = CreateFrame("Frame", nil, f) -- above the plate's debuff icons
   f.top:SetAllPoints(); f.top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  f.pctBox = MakeBox(f.top, 30, 14) -- under the level box
+  f.pctBox = CreateFrame("Frame", nil, f.top, "BackdropTemplate") -- under the level box
+  f.pctBox:SetSize(36, 18)
   f.pct = f.pctBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.pct:SetPoint("CENTER", 0, 0)
   f.bar = bar
@@ -205,8 +214,8 @@ end
 
 local function StyleFlash(fl, c, alpha, speed, showIcon)
   TintGlow(fl.glow, c, alpha)
-  fl.icon:SetTextColor(c[1], c[2], c[3])
-  fl.iconBox:SetShown(showIcon)
+  fl.icon:SetVertexColor(c[1], c[2], c[3])
+  fl.icon:SetShown(showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
@@ -221,8 +230,8 @@ local function PlaceText(f)
   f.pctBox:ClearAllPoints()
   f.pctBox:SetPoint("TOP", f.bar, "BOTTOMRIGHT", LEVEL_GAP + LEVEL_W / 2 + px, -6 + py)
   local function placeIcon(fl)
-    fl.iconBox:ClearAllPoints()
-    fl.iconBox:SetPoint("RIGHT", f.bar, "LEFT", -ix, 0)
+    fl.icon:ClearAllPoints()
+    fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -ix, 0)
   end
   for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl) end
   for _, g in ipairs(f.gates) do placeIcon(g.flash) end
@@ -237,6 +246,7 @@ end
 
 local function Style(f, dps)
   PlaceText(f)
+  StyleBox(f.pctBox)
   local db = ns.db
   local st, col = Sets(dps)
   StyleFlash(f.aggro, col.aggro, st.aggro.alpha, st.aggro.speed or 0.5, false)
@@ -273,7 +283,7 @@ function V.Render(plate, state)
   f.pctBox:SetShown(shown)
   if shown then
     local ok, w = pcall(f.pct.GetStringWidth, f.pct)
-    f.pctBox:SetWidth(math.max(24, ((ok and type(w) == "number") and w or 24) + 8))
+    f.pctBox:SetWidth(math.max(34, ((ok and type(w) == "number") and w or 24) + 14))
   end
 end
 
