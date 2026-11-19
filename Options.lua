@@ -152,7 +152,7 @@ local function BuildPanel(panel)
     sw.Refresh = function() sr(); name:SetText(label()[2]) end
     y = y - 32
   end
-  track(at(UI.Slider(panel, "Warn at (not the tank, or pet tanking)", 300, 50, 100, 5,
+  track(at(UI.Slider(panel, "Warn at (not the tank / pet tanking)", 380, 50, 100, 5,
     { function() return ns.db.unstableAt end, function(v) ns.db.unstableAt = math.floor(v + 0.5) end },
     function(v) return math.floor(v + 0.5) .. "% of pulling" end, Changed), 26, y - 6))
 
@@ -171,7 +171,7 @@ local function BuildPanel(panel)
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
-  local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 300, Changed)
+  local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 170, Changed)
   local pct, nx
   pct = track(at(UI.Check(panel, "Threat % left of the nameplate", S("showPercent"), W_, function()
     Changed(); pct.Refresh()
@@ -213,7 +213,7 @@ local function BuildPanel(panel)
     for _, w in ipairs(refreshers) do w.Refresh() end
     Changed()
   end), 26, y - 40)
-  local hint = UI.Text(panel, "note", "/ag debug shows what threat data the game gives addons.")
+  local hint = UI.Text(panel, "note", "/ag debug: what threat data the game gives.")
   hint:SetPoint("LEFT", reset, "RIGHT", 12, 0)
 
   panel:HookScript("OnShow", function() for _, w in ipairs(refreshers) do w.Refresh() end end)
