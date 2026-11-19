@@ -5,12 +5,12 @@
 A clean glow around each enemy's nameplate shows your threat at a glance. Tanks see who holds it; damage dealers and healers see how close they are to pulling it. Built for tanks, damage dealers, healers and pet classes alike.
 
 ## Highlights
-- **Tank:** one glow while you hold aggro, another (flashing) plus a "!" when it's on someone else.
+- **Tank:** one glow while you hold aggro, another (flashing) plus a "!" (and your %, if shown) when it's on someone else.
 - **Not the tank:** safe while the tank has it, close when you near the warning %, on you when you pull it. Plus your threat % in a small box left of the nameplate.
 - **Every glow is yours to tune:** color, on/off, flash, strength and flash interval.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
 - **Works in combat:** when the game hides threat in a group, it reads your own threat from the enemy's tooltip (on enemies you have threat on).
-- **Threat %:** for when you're not the tank, left of the nameplate, clear of debuff icons and Questie's quest icon (up to 100%). At 100% (it's on you) the "!" takes the number's place.
+- **Threat %:** below 100% (tank or not), left of the nameplate, clear of debuff icons and Questie's quest icon (up to 100%). At 100% (it's on you) the "!" takes the number's place.
 - **Smart role:** uses your group-finder role; with none set, it acts like solo.
 
 ## Quick start
