@@ -11,6 +11,11 @@ ns.Renderer = V
 
 local isSecret = ns.isSecret
 local indicators = {}   -- plate -> indicator frame
+-- show at most 100%; a hidden (secret) value can't be compared, so it passes through as is
+local function Cap(v)
+  if isSecret(v) or type(v) ~= "number" then return v end
+  return v > 100 and 100 or v
+end
 local TEXT_LEVEL = 30   -- % and "!" sit this many frame levels above the health bar (over debuff icons)
 
 local function HealthBarOf(plate)
@@ -289,7 +294,7 @@ function V.Render(plate, state)
       HideGates(f)
       if db.showPercent and state.pct then
         local c = col.unstable
-        f.pct:SetAlpha(1); f.pct:SetFormattedText("%d%%", math.min(100, state.pct)); f.pct:SetTextColor(c[1], c[2], c[3]); f.pct:Show()
+        f.pct:SetAlpha(1); f.pct:SetFormattedText("%d%%", Cap(state.pct)); f.pct:SetTextColor(c[1], c[2], c[3]); f.pct:Show()
       else
         f.pct:Hide()
       end
@@ -345,10 +350,20 @@ function V.Render(plate, state)
   end
   if pct then
     f.pct:SetAlpha(1)
-    f.pct:SetFormattedText("%d%%", math.min(100, pct)); f.pct:SetTextColor(color[1], color[2], color[3]); f.pct:Show()
+    f.pct:SetFormattedText("%d%%", Cap(pct)); f.pct:SetTextColor(color[1], color[2], color[3]); f.pct:Show()
   else
     f.pct:Hide()
   end
+end
+
+-- /ag debug: what the % label is doing on this plate
+function V.TextInfo(plate)
+  local f = plate and indicators[plate]
+  if not f then return "no indicator" end
+  local ok, txt = pcall(function() return f.pct:GetText() end)
+  return format("%% shown=%s visible=%s text=%s alpha=%.2f levels bar/top=%s/%s",
+    tostring(f.pct:IsShown()), tostring(f.pct:IsVisible()), ok and tostring(txt) or "<hidden>",
+    f.pct:GetEffectiveAlpha() or -1, tostring(f.bar:GetFrameLevel()), tostring(f.top:GetFrameLevel()))
 end
 
 function V.Hide(plate)

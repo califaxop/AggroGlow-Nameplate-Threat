@@ -132,6 +132,9 @@ SlashCmdList.AGGROGLOW = function(msg)
         ns.Dbg(unit, "isTanking=" .. show(t), "status=" .. show(s), "pct=" .. show(p),
           "tooltip=" .. tostring(S.TooltipPct and S.TooltipPct(unit) or "none"),
           "-> " .. (st and st.kind or "?") .. (st and st.via and (" (from " .. st.via .. ")") or ""))
+        local plate = R.Get(unit)
+        local okI, info = pcall(V.TextInfo, plate)
+        ns.Dbg("   ", okI and info or ("text check failed: " .. tostring(info)))
       end
       ns.Dbg("nameplates tracked:", n, "| client can show hidden values:",
         V.HasSecretSupport() and "yes" or "no",
