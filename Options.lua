@@ -162,10 +162,10 @@ local function BuildPanel(panel)
   track(at(UI.Check(panel, "Only in a party or raid (or when my pet tanks)", S("onlyInGroup"), W_, Changed), 26, y))
   local iconDist
   local icon
-  icon = track(at(UI.Check(panel, "\"!\" on the left while aggro isn't safe", S("showIcon"), W_, function()
+  icon = track(at(UI.Check(panel, "\"!\" when it's on you (or lost, as the tank)", S("showIcon"), W_, function()
     Changed(); icon.Refresh()
   end), 26, y - 24))
-  iconDist = track(at(UI.Slider(panel, "\"!\" distance (from the % or the nameplate)", 300, 0, 40, 1, S("iconOffsetX"),
+  iconDist = track(at(UI.Slider(panel, "\"!\" distance", 300, 0, 40, 1, S("iconOffsetX"),
     function(v) return v .. " px" end, Changed, 1), 50, y - 50))
   local ir = icon.Refresh
   icon.Refresh = function()
@@ -177,25 +177,26 @@ local function BuildPanel(panel)
     Changed(); pct.Refresh()
   end), 26, y - 94))
   track(at(stablePct, 50, y - 118))
-  local n2 = at(UI.Text(panel, "note", "Your own threat, when you're not the tank (or your pet tanks). In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 72, y - 142)
-  n2:SetWidth(W_ - 46)
+  local tankPct = track(at(UI.Check(panel, "As the tank: % once lost", S("tankLostPercent"), 190, Changed), 240, y - 118))
+  local n2 = at(UI.Text(panel, "note", "Your own threat when you're not the tank; at 100% the \"!\" takes its place. In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 50, y - 144)
+  n2:SetWidth(W_ - 60)
   nx = track(at(UI.Slider(panel, "% distance from the nameplate", 300, 0, 40, 1, S("percentGap"),
-    function(v) return v .. " px" end, Changed, 1), 50, y - 180))
+    function(v) return v .. " px" end, Changed, 1), 50, y - 196))
   local bga = track(at(UI.Slider(panel, "% background opacity", 180, 0, 1, 0.05, S("percentBgAlpha"),
-    function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 222))
+    function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 240))
   local pr = pct.Refresh
   pct.Refresh = function()
-    pr(); stablePct.SetActive(ns.db.showPercent)
+    pr(); stablePct.SetActive(ns.db.showPercent); tankPct.SetActive(ns.db.showPercent)
     local a = ns.db.showPercent and 1 or 0.4
     nx:SetAlpha(a); bga:SetAlpha(a); icon.Refresh()
   end
-  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 268))
+  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 286))
 
   -- Preview ----------------------------------------------------------------
-  y = y - 304
+  y = y - 322
   at(UI.Section(panel, "Preview on your target", W_), 26, y); y = y - 32
   local buttons = {}
-  local MODES = { { "secure", "Stable" }, { "insecure", "Unstable" }, { "lost", "No threat" } }
+  local MODES = { { "secure", "Holding / safe" }, { "insecure", "Close" }, { "lost", "Lost / on you" } }
   local function SetPreview(mode)
     ns.preview = (ns.preview ~= mode) and mode or nil
     for i, m in ipairs(MODES) do buttons[i].SetLabel(ns.preview == m[1] and "Stop" or m[2]) end
@@ -203,7 +204,7 @@ local function BuildPanel(panel)
     Changed()
   end
   for i, m in ipairs(MODES) do
-    buttons[i] = at(UI.Button(panel, m[2], 100, function() SetPreview(m[1]) end), 26 + (i - 1) * 106, y)
+    buttons[i] = at(UI.Button(panel, m[2], 128, function() SetPreview(m[1]) end), 26 + (i - 1) * 136, y)
   end
   panel:HookScript("OnHide", function() if ns.preview then SetPreview(ns.preview) end end)
 

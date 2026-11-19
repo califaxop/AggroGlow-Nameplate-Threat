@@ -274,7 +274,8 @@ local function Style(f, dps, plate)
   local db = ns.db
   local st, col = Sets(dps)
   StyleFlash(f.aggro, col.aggro, st.aggro.alpha, st.aggro.speed or 0.5, false)
-  StyleFlash(f.unstable, col.unstable, st.unstable.alpha, st.unstable.speed or 0.35, db.showIcon)
+  -- the "!" marks "it's on you" (or lost, as the tank); not "close", where the % says it
+  StyleFlash(f.unstable, col.unstable, st.unstable.alpha, st.unstable.speed or 0.35, db.showIcon and not dps)
   StyleFlash(f.nothreat, col.nothreat, st.nothreat.alpha, st.nothreat.speed or 0.25, db.showIcon)
   for _, g in ipairs(f.gates) do StyleFlash(g.flash, col.unstable, st.unstable.alpha, st.unstable.speed or 0.35, db.showIcon) end
 end
@@ -405,8 +406,13 @@ function Render(plate, state)
 
   -- threat %: yours when you're not the tank; with a pet tanking, how close you are to pulling it
   local pct, color
-  if db.showPercent and not meTank then -- the % is for when you're not the tank (or your pet tanks)
-    if noThreat then pct, color = state.pct, col.nothreat
+  if db.showPercent and meTank then
+    -- as the tank: no number while you hold it; once lost, the "!" (and your % if you want it)
+    if noThreat and db.tankLostPercent then pct, color = state.pct, col.nothreat end
+  elseif db.showPercent then -- not the tank (or your pet tanks): your %
+    if noThreat then
+      -- at 100% it's on you: the "!" takes the number's place (the number stays without the "!")
+      if not db.showIcon then pct, color = state.pct, col.nothreat end
     elseif kind == "pulling" then pct, color = state.pct, col.unstable
     elseif unstable then pct, color = state.closest or state.pct, col.unstable
     elseif stable and db.showPercentStable then pct, color = state.closest or state.pct, col.aggro end

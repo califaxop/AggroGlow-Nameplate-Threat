@@ -15,7 +15,8 @@ ns.DEFAULTS = {
     nothreat = { show = true, flash = true,  alpha = 0.8, speed = 0.25 },  -- lost: it's on someone else
   },
   unstableAt        = 80,    -- unstable once someone has this % of the threat needed to pull it off you
-  showIcon          = false, -- "!" while aggro isn't stable
+  showIcon          = true,  -- "!": it's on you (not the tank), or you lost it (tank); replaces the % at 100%
+  tankLostPercent   = false, -- as the tank: also show your % once you've lost aggro
   showPercent       = false, -- threat % beside the nameplate
   showPercentStable = false, -- ...also while aggro is stable
   percentGap        = 6,       -- the % box: distance left of the health bar (px)
@@ -94,6 +95,7 @@ function ns.LoadDB()
   if db.percentNudgeX ~= nil or db.percentNudgeY ~= nil then -- box under the level (test builds only)
     db.percentNudgeX, db.percentNudgeY, db.iconOffsetX = nil, nil, nil
   end
+  if not db.iconV2 then db.showIcon = true; db.iconV2 = true end -- 3.9.0: the "!" now stands in for the % at 100%
   db.version = 5
   for k, d in pairs(ns.DEFAULTS) do
     if db[k] == nil then db[k] = Copy(d) end
