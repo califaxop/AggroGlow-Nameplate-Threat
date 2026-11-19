@@ -226,7 +226,7 @@ local function QuestieIcon(plate)
   local ok, kids = pcall(function() return { plate:GetChildren() } end)
   if not ok then return nil end
   for _, c in ipairs(kids) do
-    if c.Icon and c:IsShown() and c:GetFrameStrata() == "HIGH" then return c end
+    if c.Icon and c:IsShown() and c:GetFrameStrata() == "HIGH" and c.Icon.GetTexture and c.Icon:GetTexture() then return c end
   end
 end
 
@@ -234,7 +234,7 @@ end
 -- the "!" left of that (or of the bar, without the %)
 local function PlaceText(f, qicon)
   local db = ns.db
-  local gap, ix, withPct = db.percentGap or 6, db.iconOffsetX or 4, db.showPercent and true or false
+  local gap = db.percentGap or 6
   -- step past Questie's icon so neither covers the other: how far its left edge reaches past the bar's
   local extra = 0
   if qicon then
@@ -246,16 +246,25 @@ local function PlaceText(f, qicon)
       extra = 20 -- Questie's default spot: about 17 px out, 16 px wide
     end
   end
-  local key = gap .. ":" .. ix .. ":" .. tostring(withPct) .. ":" .. extra
+  f.textX = gap + extra -- how far out from the bar the % (or the "!") starts
+  local key = gap .. ":" .. extra
   if f.placedKey == key then return end
   f.placedKey = key
-  local x = gap + extra
   f.pctBox:ClearAllPoints()
-  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -x, 0)
+  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -f.textX, 0)
+  f.iconKey = nil -- the "!" follows (see PlaceIcons)
+end
+
+-- the "!": left of the % box while the % shows, otherwise where the % would start
+local function PlaceIcons(f, pctShown)
+  local ix = ns.db.iconOffsetX or 4
+  local key = tostring(pctShown) .. ":" .. ix .. ":" .. (f.textX or 0)
+  if f.iconKey == key then return end
+  f.iconKey = key
   local function placeIcon(fl)
     fl.icon:ClearAllPoints()
-    if withPct then fl.icon:SetPoint("RIGHT", f.pctBox, "LEFT", -ix, 0)
-    else fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -(x + ix), 0) end
+    if pctShown then fl.icon:SetPoint("RIGHT", f.pctBox, "LEFT", -ix, 0)
+    else fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -(f.textX or 6), 0) end
   end
   for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl) end
   for _, g in ipairs(f.gates) do placeIcon(g.flash) end
@@ -304,8 +313,9 @@ function V.Render(plate, state)
   local f = plate and indicators[plate]
   if not f then return end
   -- the % box follows the %: shown with it, sized to it
-  local shown = f.pct:IsShown()
+  local shown = f.pct:IsShown() and true or false
   f.pctBox:SetShown(shown)
+  PlaceIcons(f, shown)
   if shown then
     local ok, w = pcall(f.pct.GetStringWidth, f.pct)
     f.pctBox:SetWidth(math.max(22, ((ok and type(w) == "number") and w or 20) + 8))
