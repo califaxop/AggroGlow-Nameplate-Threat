@@ -28,7 +28,7 @@ A clean glow around each enemy's nameplate shows your threat at a glance: green 
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
 ## Recent changes
-- **3.8.2:** Threat % tops out at 100% and sits above the enemy's debuff icons.
+- **3.8.2:** Threat % shows at most 100%.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.
 - **3.8.0:** Separate glows for tank and not-the-tank, with a My role setting.
 - **3.7.1:** Pet tanking: orange when you're catching up, red when it's on you.

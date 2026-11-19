@@ -11,6 +11,7 @@ ns.Renderer = V
 
 local isSecret = ns.isSecret
 local indicators = {}   -- plate -> indicator frame
+
 -- show at most 100%; a hidden (secret) value can't be compared, so it passes through as is
 local function Cap(v)
   if isSecret(v) or type(v) ~= "number" then return v end
@@ -347,16 +348,6 @@ function V.Render(plate, state)
   else
     f.pct:Hide()
   end
-end
-
--- /ag debug: what the % label is doing on this plate
-function V.TextInfo(plate)
-  local f = plate and indicators[plate]
-  if not f then return "no indicator" end
-  local ok, txt = pcall(function() return f.pct:GetText() end)
-  return format("%% shown=%s visible=%s text=%s alpha=%.2f levels bar/glow=%s/%s",
-    tostring(f.pct:IsShown()), tostring(f.pct:IsVisible()), ok and tostring(txt) or "<hidden>",
-    (f.pct.GetEffectiveAlpha and f.pct:GetEffectiveAlpha() or f.pct:GetAlpha()) or -1, tostring(f.bar:GetFrameLevel()), tostring(f:GetFrameLevel()))
 end
 
 function V.Hide(plate)
