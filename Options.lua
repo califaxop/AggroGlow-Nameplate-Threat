@@ -3,7 +3,10 @@
 local _, ns = ...
 local UI = ns.UI
 
-local function Changed() if ns.UpdateAll then ns.UpdateAll() end end
+local function Changed()
+  if ns.UpdateAll then ns.UpdateAll() end
+  if ns.RefreshInUse then ns.RefreshInUse() end
+end
 local function S(key) return { function() return ns.db[key] end, function(v) ns.db[key] = v end } end
 local function pctFmt(v) return math.floor(v * 100 + 0.5) .. "%" end
 
@@ -96,17 +99,32 @@ local function BuildPanel(panel)
   at(UI.Text(panel, "line", "My role"), 26, -140)
   track(at(UI.Selector(panel, 300, { { "auto", "Auto: my group-finder role" }, { "tank", "Tank" }, { "dps", "Not the tank (damage / healer)" } },
     S("role"), Changed, "Auto uses the role you picked in the group finder. With no role set (solo, or a group without roles) you're treated as when solo: your pet when it's out, else you as the tank."), 120, -136))
-  local n2 = at(UI.Text(panel, "note", "Tank: green while you hold it, red (flashing) when it's on someone else. Not the tank: green while the tank has it, orange when you're close to pulling it, red when you have."), 26, -164)
+  local n2 = at(UI.Text(panel, "note", "Tank / solo: green while you (or your pet) hold it, red when it's on someone else. Not the tank: green while the tank has it, orange when you're close, red once you've pulled it."), 26, -164)
   n2:SetWidth(W_)
 
   -- Glows ------------------------------------------------------------------
   local G0 = -206
   at(UI.Section(panel, "Glows", W_), 26, G0)
   local rowsRefresh = {}
-  local setSwitch = track(at(UI.Toggle(panel, 230, { { "tank", "Settings for: I'm the tank" }, { "dps", "Settings for: I'm not the tank" } },
+  local setSwitch = track(at(UI.Toggle(panel, 230, { { "tank", "Settings for: Tank / solo" }, { "dps", "Settings for: Not the tank" } },
     { function() return editSet end, function(v) editSet = v end },
     function() for _, f in ipairs(rowsRefresh) do f() end end,
-    "Each mode has its own glows. Click to switch which one you're editing."), 26, G0 - 30))
+    "Each has its own glows. Tank / solo is used when you're the tank, when you're solo, and while your pet tanks. Click to switch which one you're editing."), 26, G0 - 30))
+  -- which set is in use right now
+  local inUse = UI.Text(panel, "note", "")
+  inUse:SetPoint("LEFT", setSwitch, "RIGHT", 12, 0)
+  local function InUseText()
+    local St = ns.State
+    local ok, mode = pcall(St.Mode)
+    if not ok then return "" end
+    if mode == "dps" then return "In use: Not the tank" end
+    if mode == "pet" then return "In use: Tank / solo (your pet)" end
+    local inGroup = IsInGroup and IsInGroup()
+    return inGroup and "In use: Tank / solo (you tank)" or "In use: Tank / solo (solo)"
+  end
+  inUse.Refresh = function() inUse:SetText(InUseText()) end
+  ns.RefreshInUse = inUse.Refresh
+  track(inUse)
   local COL_SHOW, COL_FLASH, COL_STR, COL_INT = 150, 188, 226, 330
   at(UI.Text(panel, "note", "Show"), 26 + COL_SHOW - 4, G0 - 60)
   at(UI.Text(panel, "note", "Flash"), 26 + COL_FLASH - 4, G0 - 60)
