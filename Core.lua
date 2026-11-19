@@ -18,10 +18,9 @@ ns.DEFAULTS = {
   showIcon          = false, -- "!" while aggro isn't stable
   showPercent       = false, -- threat % beside the nameplate
   showPercentStable = false, -- ...also while aggro is stable
-  percentNudgeX     = 0,       -- fine-tune the % box under the level box (px)
-  percentNudgeY     = 0,
+  percentGap        = 6,       -- the % box: distance left of the health bar (px)
   percentBgAlpha    = 0.8,     -- the % box's background opacity
-  iconOffsetX       = 24,      -- the "!": distance left of the health bar (past the elite dragon)
+  iconOffsetX       = 4,       -- the "!": distance left of the % box (or of the bar, without the %)
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
   flareStyle        = true,  -- settings window in FlareUI's style when FlareUI is installed
@@ -91,6 +90,9 @@ function ns.LoadDB()
   if db.percentSide ~= nil then
     db.percentSide, db.percentOffsetLeft, db.percentOffsetRight, db.iconGapAfterPct = nil, nil, nil, nil
     db.iconOffsetX = nil
+  end
+  if db.percentNudgeX ~= nil or db.percentNudgeY ~= nil then -- box under the level (test builds only)
+    db.percentNudgeX, db.percentNudgeY, db.iconOffsetX = nil, nil, nil
   end
   db.version = 5
   for k, d in pairs(ns.DEFAULTS) do

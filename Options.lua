@@ -162,34 +162,32 @@ local function BuildPanel(panel)
   track(at(UI.Check(panel, "Only in a party or raid (or when my pet tanks)", S("onlyInGroup"), W_, Changed), 26, y))
   local iconDist
   local icon
-  icon = track(at(UI.Check(panel, "\"!\" box on the left while aggro isn't safe", S("showIcon"), W_, function()
+  icon = track(at(UI.Check(panel, "\"!\" on the left while aggro isn't safe", S("showIcon"), W_, function()
     Changed(); icon.Refresh()
   end), 26, y - 24))
-  iconDist = track(at(UI.Slider(panel, "\"!\" distance from the nameplate", 300, 0, 60, 1, S("iconOffsetX"),
+  iconDist = track(at(UI.Slider(panel, "\"!\" distance (from the % or the nameplate)", 300, 0, 40, 1, S("iconOffsetX"),
     function(v) return v .. " px" end, Changed, 1), 50, y - 50))
   local ir = icon.Refresh
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
   local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 300, Changed)
-  local pct, nx, ny
-  pct = track(at(UI.Check(panel, "Threat % under the enemy's level", S("showPercent"), W_, function()
+  local pct, nx
+  pct = track(at(UI.Check(panel, "Threat % left of the nameplate", S("showPercent"), W_, function()
     Changed(); pct.Refresh()
   end), 26, y - 94))
   track(at(stablePct, 50, y - 118))
   local n2 = at(UI.Text(panel, "note", "Your own threat, when you're not the tank (or your pet tanks). In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 72, y - 142)
   n2:SetWidth(W_ - 46)
-  nx = track(at(UI.Slider(panel, "Fine-tune: left / right", 180, -20, 20, 1, S("percentNudgeX"),
-    function(v) return v .. " px" end, Changed), 50, y - 180))
-  ny = track(at(UI.Slider(panel, "up / down", 160, -20, 20, 1, S("percentNudgeY"),
-    function(v) return v .. " px" end, Changed), 250, y - 180))
+  nx = track(at(UI.Slider(panel, "% distance from the nameplate", 300, 0, 40, 1, S("percentGap"),
+    function(v) return v .. " px" end, Changed, 1), 50, y - 180))
   local bga = track(at(UI.Slider(panel, "% background opacity", 180, 0, 1, 0.05, S("percentBgAlpha"),
     function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 222))
   local pr = pct.Refresh
   pct.Refresh = function()
     pr(); stablePct.SetActive(ns.db.showPercent)
     local a = ns.db.showPercent and 1 or 0.4
-    nx:SetAlpha(a); ny:SetAlpha(a); bga:SetAlpha(a)
+    nx:SetAlpha(a); bga:SetAlpha(a); icon.Refresh()
   end
   track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 268))
 

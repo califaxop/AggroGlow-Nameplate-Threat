@@ -102,7 +102,7 @@ local function StyleBox(b)
   if b.styleKey == key then return end
   b.styleKey = key
   if edge then
-    b:SetBackdrop({ bgFile = DIALOG_BG, edgeFile = edge, edgeSize = 10, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
+    b:SetBackdrop({ bgFile = DIALOG_BG, edgeFile = edge, edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
     b:SetBackdropColor(1, 1, 1, a)
     b:SetBackdropBorderColor(FLARE_BRONZE[1], FLARE_BRONZE[2], FLARE_BRONZE[3], 1)
   else
@@ -202,7 +202,7 @@ local function Create(plate)
   f.top = CreateFrame("Frame", nil, f) -- above the plate's debuff icons
   f.top:SetAllPoints(); f.top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
   f.pctBox = CreateFrame("Frame", nil, f.top, "BackdropTemplate") -- under the level box
-  f.pctBox:SetSize(36, 18)
+  f.pctBox:SetSize(30, 15)
   f.pct = f.pctBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   f.pct:SetPoint("CENTER", 0, 0)
   f.bar = bar
@@ -219,19 +219,19 @@ local function StyleFlash(fl, c, alpha, speed, showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
--- the % in a small box under the level box (right of the health bar); the "!" in one on the left
-local LEVEL_GAP, LEVEL_W = 7, 23 -- the level box: its gap from the health bar, and its width
+-- the % in a small box left of the health bar; the "!" left of that (or of the bar, without the %)
 local function PlaceText(f)
   local db = ns.db
-  local px, py, ix = db.percentNudgeX or 0, db.percentNudgeY or 0, db.iconOffsetX or 24
-  local key = px .. ":" .. py .. ":" .. ix
+  local gap, ix, withPct = db.percentGap or 6, db.iconOffsetX or 4, db.showPercent and true or false
+  local key = gap .. ":" .. ix .. ":" .. tostring(withPct)
   if f.placedKey == key then return end
   f.placedKey = key
   f.pctBox:ClearAllPoints()
-  f.pctBox:SetPoint("TOP", f.bar, "BOTTOMRIGHT", LEVEL_GAP + LEVEL_W / 2 + px, -6 + py)
+  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -gap, 0)
   local function placeIcon(fl)
     fl.icon:ClearAllPoints()
-    fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -ix, 0)
+    if withPct then fl.icon:SetPoint("RIGHT", f.pctBox, "LEFT", -ix, 0)
+    else fl.icon:SetPoint("RIGHT", f.bar, "LEFT", -(gap + ix), 0) end
   end
   for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl) end
   for _, g in ipairs(f.gates) do placeIcon(g.flash) end
@@ -283,7 +283,7 @@ function V.Render(plate, state)
   f.pctBox:SetShown(shown)
   if shown then
     local ok, w = pcall(f.pct.GetStringWidth, f.pct)
-    f.pctBox:SetWidth(math.max(34, ((ok and type(w) == "number") and w or 24) + 14))
+    f.pctBox:SetWidth(math.max(22, ((ok and type(w) == "number") and w or 20) + 8))
   end
 end
 
