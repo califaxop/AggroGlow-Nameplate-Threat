@@ -162,41 +162,32 @@ local function BuildPanel(panel)
   track(at(UI.Check(panel, "Only in a party or raid (or when my pet tanks)", S("onlyInGroup"), W_, Changed), 26, y))
   local iconDist
   local icon
-  icon = track(at(UI.Check(panel, "\"!\" icon while aggro isn't stable", S("showIcon"), W_, function()
+  icon = track(at(UI.Check(panel, "\"!\" box on the left while aggro isn't safe", S("showIcon"), W_, function()
     Changed(); icon.Refresh()
   end), 26, y - 24))
-  -- where the "!" sits: from the health bar, or from the end of the % when that's on the right too
-  local function iconKey()
-    return (ns.db.percentSide == "right" and ns.db.showPercent) and "iconGapAfterPct" or "iconOffsetX"
-  end
-  iconDist = track(at(UI.Slider(panel, "\"!\" distance from the nameplate", 300, 0, 80, 1,
-    { function() return ns.db[iconKey()] end, function(v) ns.db[iconKey()] = v end },
+  iconDist = track(at(UI.Slider(panel, "\"!\" distance from the nameplate", 300, 0, 60, 1, S("iconOffsetX"),
     function(v) return v .. " px" end, Changed, 1), 50, y - 50))
   local ir = icon.Refresh
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
   local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 300, Changed)
-  local pct
-  pct = track(at(UI.Check(panel, "Threat % beside the nameplate", S("showPercent"), 250, function()
-    Changed(); pct.Refresh(); icon.Refresh()
+  local pct, nx, ny
+  pct = track(at(UI.Check(panel, "Threat % under the enemy's level", S("showPercent"), W_, function()
+    Changed(); pct.Refresh()
   end), 26, y - 94))
-  local dist -- created below; the side switch refreshes the distance (it's kept per side)
-  local side = track(at(UI.Toggle(panel, 120, { { "left", "On the left" }, { "right", "On the right" } }, S("percentSide"),
-    function() Changed(); if dist then dist.Refresh() end; icon.Refresh() end, "Which side of the nameplate the % sits on. Click to switch."), 26 + 290, y - 93))
   track(at(stablePct, 50, y - 118))
-  local pr = pct.Refresh
-  pct.Refresh = function()
-    pr(); stablePct.SetActive(ns.db.showPercent); side.SetActive(ns.db.showPercent); side.Refresh()
-    if dist then dist:SetAlpha(ns.db.showPercent and 1 or 0.4) end
-  end
   local n2 = at(UI.Text(panel, "note", "Your own threat, when you're not the tank (or your pet tanks). In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 72, y - 142)
   n2:SetWidth(W_ - 46)
-  -- where the % sits: its distance from the bar, kept per side
-  local function sideKey() return ns.db.percentSide == "right" and "percentOffsetRight" or "percentOffsetLeft" end
-  dist = track(at(UI.Slider(panel, "% distance from the nameplate", 300, 0, 80, 1,
-    { function() return ns.db[sideKey()] end, function(v) ns.db[sideKey()] = v end },
-    function(v) return v .. " px" end, Changed, 1), 50, y - 186))
+  nx = track(at(UI.Slider(panel, "Fine-tune: left / right", 180, -20, 20, 1, S("percentNudgeX"),
+    function(v) return v .. " px" end, Changed), 50, y - 180))
+  ny = track(at(UI.Slider(panel, "up / down", 160, -20, 20, 1, S("percentNudgeY"),
+    function(v) return v .. " px" end, Changed), 250, y - 180))
+  local pr = pct.Refresh
+  pct.Refresh = function()
+    pr(); stablePct.SetActive(ns.db.showPercent)
+    nx:SetAlpha(ns.db.showPercent and 1 or 0.4); ny:SetAlpha(ns.db.showPercent and 1 or 0.4)
+  end
   track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 232))
 
   -- Preview ----------------------------------------------------------------

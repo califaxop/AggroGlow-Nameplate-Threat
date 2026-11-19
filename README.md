@@ -6,11 +6,11 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 
 ## Highlights
 - **Tank:** one glow while you hold aggro, another (flashing) when it's on someone else.
-- **Not the tank:** safe while the tank has it, close when you near the warning %, on you when you pull it. Plus your threat % on either side of the nameplate.
+- **Not the tank:** safe while the tank has it, close when you near the warning %, on you when you pull it. Plus your threat % in a small box under the enemy's level.
 - **Every glow is yours to tune:** color, on/off, flash, strength and flash interval.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
 - **Works in combat:** when the game hides threat in a group, it reads your own threat from the enemy's tooltip (on enemies you have threat on).
-- **Threat %:** for when you're not the tank, at your chosen distance (up to 100%). Optional "!" warning icon too.
+- **Threat %:** for when you're not the tank, under the enemy's level, clear of debuff icons (up to 100%). Optional "!" warning box on the left.
 - **Smart role:** uses your group-finder role; with none set, it acts like solo.
 
 ## Quick start
@@ -30,7 +30,7 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
 ## Recent changes
-- **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100% and drawn above debuff icons.
+- **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100%, now under the enemy's level; "!" moves to the left.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.
 - **3.8.0:** Separate glows for tank and not-the-tank, with a My role setting.
 - **3.7.1:** Pet tanking: orange when you're catching up, red when it's on you.

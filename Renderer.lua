@@ -90,6 +90,24 @@ end
 
 -- A flashing glow: the holder's alpha is controlled by state (or by the client when values
 -- are hidden); only the inner frame flashes, so the two never fight each other.
+-- A small box in the nameplate's own style (like its level box): dark fill, thin grey border.
+local BOX_BORDER = { 0.55, 0.55, 0.55, 0.9 }
+local function MakeBox(parent, w, h)
+  local b = CreateFrame("Frame", nil, parent)
+  b:SetSize(w, h)
+  local bg = b:CreateTexture(nil, "BACKGROUND")
+  bg:SetAllPoints(); bg:SetColorTexture(0, 0, 0, 0.75)
+  local function edge(p1, p2, horiz)
+    local t = b:CreateTexture(nil, "BORDER")
+    t:SetColorTexture(BOX_BORDER[1], BOX_BORDER[2], BOX_BORDER[3], BOX_BORDER[4])
+    t:SetPoint(p1); t:SetPoint(p2)
+    if horiz then t:SetHeight(1) else t:SetWidth(1) end
+  end
+  edge("TOPLEFT", "TOPRIGHT", true); edge("BOTTOMLEFT", "BOTTOMRIGHT", true)
+  edge("TOPLEFT", "BOTTOMLEFT", false); edge("TOPRIGHT", "BOTTOMRIGHT", false)
+  return b
+end
+
 local function MakeFlash(f, bar)
   local holder = CreateFrame("Frame", nil, f)
   holder:SetAllPoints()
@@ -104,11 +122,12 @@ local function MakeFlash(f, bar)
   -- child of holder, so it shows and hides with its glow
   local top = CreateFrame("Frame", nil, holder)
   top:SetAllPoints(); top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  local icon = top:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  icon:SetPoint("LEFT", bar, "RIGHT", 22, 0)
+  local box = MakeBox(top, 14, 16) -- left of the nameplate
+  local icon = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  icon:SetPoint("CENTER", 0, 0)
   icon:SetText("!")
   holder:Hide()
-  return { holder = holder, glow = glow, anim = anim, alpha = a, icon = icon }
+  return { holder = holder, glow = glow, anim = anim, alpha = a, icon = icon, iconBox = box }
 end
 
 ---------------------------------------------------------------------------
@@ -174,7 +193,9 @@ local function Create(plate)
 
   f.top = CreateFrame("Frame", nil, f) -- above the plate's debuff icons
   f.top:SetAllPoints(); f.top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
-  f.pct = f.top:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  f.pctBox = MakeBox(f.top, 30, 14) -- under the level box
+  f.pct = f.pctBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  f.pct:SetPoint("CENTER", 0, 0)
   f.bar = bar
 
 
@@ -185,37 +206,26 @@ end
 local function StyleFlash(fl, c, alpha, speed, showIcon)
   TintGlow(fl.glow, c, alpha)
   fl.icon:SetTextColor(c[1], c[2], c[3])
-  fl.icon:SetShown(showIcon)
+  fl.iconBox:SetShown(showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
--- the % on the chosen side of the nameplate; the "!" moves further out when they share a side
+-- the % in a small box under the level box (right of the health bar); the "!" in one on the left
+local LEVEL_GAP, LEVEL_W = 7, 23 -- the level box: its gap from the health bar, and its width
 local function PlaceText(f)
   local db = ns.db
-  local side = db.percentSide == "right" and "right" or "left"
-  local dx = side == "right" and (db.percentOffsetRight or 40) or (db.percentOffsetLeft or 6)
-  local dy = 0
-  local afterPct = side == "right" and db.showPercent
-  local ix = afterPct and (db.iconGapAfterPct or 6) or (db.iconOffsetX or 22)
-  local iy = 0
-  local key = side .. dx .. ":" .. dy .. ":" .. tostring(afterPct) .. ix .. ":" .. iy
+  local px, py, ix = db.percentNudgeX or 0, db.percentNudgeY or 0, db.iconOffsetX or 24
+  local key = px .. ":" .. py .. ":" .. ix
   if f.placedKey == key then return end
-  f.placedKey, f.side = key, side
-  f.pct:ClearAllPoints()
-  if side == "right" then
-    -- default 40: past the level box that sits right of the health bar
-    f.pct:SetPoint("LEFT", f.bar, "RIGHT", dx, dy); f.pct:SetJustifyH("LEFT")
-  else
-    f.pct:SetPoint("RIGHT", f.bar, "LEFT", -dx, dy); f.pct:SetJustifyH("RIGHT")
+  f.placedKey = key
+  f.pctBox:ClearAllPoints()
+  f.pctBox:SetPoint("TOP", f.bar, "BOTTOMRIGHT", LEVEL_GAP + LEVEL_W / 2 + px, -6 + py)
+  local function placeIcon(fl)
+    fl.iconBox:ClearAllPoints()
+    fl.iconBox:SetPoint("RIGHT", f.bar, "LEFT", -ix, 0)
   end
-  -- the "!" sits after the % when they share the right side
-  local function placeIcon(icon)
-    icon:ClearAllPoints()
-    if afterPct then icon:SetPoint("LEFT", f.pct, "RIGHT", ix, iy)
-    else icon:SetPoint("LEFT", f.bar, "RIGHT", ix, iy) end
-  end
-  for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl.icon) end
-  for _, g in ipairs(f.gates) do placeIcon(g.flash.icon) end
+  for _, fl in ipairs({ f.unstable, f.nothreat }) do placeIcon(fl) end
+  for _, g in ipairs(f.gates) do placeIcon(g.flash) end
 end
 
 -- the glow settings in use: yours as the tank (or your pet's), or yours when you're not the tank
@@ -253,7 +263,21 @@ local function HideAll(f)
   HideGates(f)
 end
 
+local Render
 function V.Render(plate, state)
+  Render(plate, state)
+  local f = plate and indicators[plate]
+  if not f then return end
+  -- the % box follows the %: shown with it, sized to it
+  local shown = f.pct:IsShown()
+  f.pctBox:SetShown(shown)
+  if shown then
+    local ok, w = pcall(f.pct.GetStringWidth, f.pct)
+    f.pctBox:SetWidth(math.max(24, ((ok and type(w) == "number") and w or 24) + 8))
+  end
+end
+
+function Render(plate, state)
   if not plate then return end
   local f = indicators[plate]
   if not f then f = Create(plate); indicators[plate] = f end

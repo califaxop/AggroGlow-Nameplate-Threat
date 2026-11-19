@@ -18,11 +18,9 @@ ns.DEFAULTS = {
   showIcon          = false, -- "!" while aggro isn't stable
   showPercent       = false, -- threat % beside the nameplate
   showPercentStable = false, -- ...also while aggro is stable
-  percentSide       = "left",  -- which side of the nameplate the % sits on: "left" | "right"
-  percentOffsetLeft = 6,       -- its distance from the health bar on the left side
-  percentOffsetRight = 40,     -- ...and on the right side (past the level box)
-  iconOffsetX       = 22,      -- the "!": distance from the health bar's right edge...
-  iconGapAfterPct   = 6,       -- ...or from the end of the %, when the % is on the right too
+  percentNudgeX     = 0,       -- fine-tune the % box under the level box (px)
+  percentNudgeY     = 0,
+  iconOffsetX       = 24,      -- the "!": distance left of the health bar (past the elite dragon)
   onlyInGroup       = false, -- only glow while you're in a party or raid (or your pet is the tank)
   tank              = "auto",  -- whose aggro the glows follow: "auto" (your pet when it's out), "me", "pet"
   flareStyle        = true,  -- settings window in FlareUI's style when FlareUI is installed
@@ -87,6 +85,11 @@ function ns.LoadDB()
       end
     end
     db.flashSpeed = nil
+  end
+  -- 3.9.0: the % moved under the level box and the "!" to the left; old placement settings go
+  if db.percentSide ~= nil then
+    db.percentSide, db.percentOffsetLeft, db.percentOffsetRight, db.iconGapAfterPct = nil, nil, nil, nil
+    db.iconOffsetX = nil
   end
   db.version = 5
   for k, d in pairs(ns.DEFAULTS) do
