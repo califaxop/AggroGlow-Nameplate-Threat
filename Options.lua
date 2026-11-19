@@ -189,29 +189,24 @@ local function BuildPanel(panel)
   icon.Refresh = function()
     ir(); iconDist.Refresh(); iconDist:SetAlpha(ns.db.showIcon and 1 or 0.4)
   end
-  local stablePct = UI.Check(panel, "Also while safe", S("showPercentStable"), 170, Changed)
   local pct, nx
-  pct = track(at(UI.Check(panel, "Threat % left of the nameplate", S("showPercent"), W_, function()
+  pct = track(at(UI.Check(panel, "Show threat % on nameplate", S("showPercent"), W_, function()
     Changed(); pct.Refresh()
   end), 26, y - 94))
-  track(at(stablePct, 50, y - 118))
-  local tankPct = track(at(UI.Check(panel, "As the tank: % once lost", S("tankLostPercent"), 190, Changed), 240, y - 118))
-  local n2 = at(UI.Text(panel, "note", "Your own threat when you're not the tank; at 100% the \"!\" takes its place. In a group it comes from the enemy's tooltip, so it shows on enemies you have threat on."), 50, y - 144)
-  n2:SetWidth(W_ - 60)
   nx = track(at(UI.Slider(panel, "% distance from the nameplate", 300, 0, 40, 1, S("percentGap"),
-    function(v) return v .. " px" end, Changed, 1), 50, y - 196))
+    function(v) return v .. " px" end, Changed, 1), 50, y - 120))
   local bga = track(at(UI.Slider(panel, "% background opacity", 180, 0, 1, 0.05, S("percentBgAlpha"),
-    function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 240))
+    function(v) return math.floor(v * 100 + 0.5) .. "%" end, Changed), 50, y - 164))
   local pr = pct.Refresh
   pct.Refresh = function()
-    pr(); stablePct.SetActive(ns.db.showPercent); tankPct.SetActive(ns.db.showPercent)
+    pr()
     local a = ns.db.showPercent and 1 or 0.4
     nx:SetAlpha(a); bga:SetAlpha(a); icon.Refresh()
   end
-  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 286))
+  track(at(UI.Check(panel, "FlareUI style for this window (needs FlareUI)", S("flareStyle"), W_, function() UI.Restyle() end), 26, y - 210))
 
   -- Preview ----------------------------------------------------------------
-  y = y - 322
+  y = y - 246
   at(UI.Section(panel, "Preview on your target", W_), 26, y); y = y - 32
   local buttons = {}
   local MODES = { { "secure", "Holding / safe" }, { "insecure", "Close" }, { "lost", "Lost / on you" } }

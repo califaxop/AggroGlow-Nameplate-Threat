@@ -416,16 +416,13 @@ function Render(plate, state)
 
   -- threat %: yours when you're not the tank; with a pet tanking, how close you are to pulling it
   local pct, color
-  if db.showPercent and meTank then
-    -- as the tank: no number while you hold it; once lost, the "!" (and your % if you want it)
-    if noThreat and db.tankLostPercent then pct, color = state.pct, col.nothreat end
-  elseif db.showPercent then -- not the tank (or your pet tanks): your %
+  if db.showPercent and not meTank then -- not the tank (or your pet tanks): your %; tanks get the "!" only
     if noThreat then
       -- at 100% it's on you: the "!" takes the number's place (the number stays without the "!")
       if not db.showIcon then pct, color = state.pct, col.nothreat end
     elseif kind == "pulling" then pct, color = state.pct, col.unstable
     elseif unstable then pct, color = state.closest or state.pct, col.unstable
-    elseif stable and db.showPercentStable then pct, color = state.closest or state.pct, col.aggro end
+    elseif stable then pct, color = state.closest or state.pct, col.aggro end
   end
   if pct then
     f.pct:SetAlpha(1)

@@ -5,7 +5,7 @@
 A clean glow around each enemy's nameplate shows your threat at a glance. Tanks see who holds it; damage dealers and healers see how close they are to pulling it. Built for tanks, damage dealers, healers and pet classes alike.
 
 ## Highlights
-- **Tank:** one glow while you hold aggro, another (flashing) plus a "!" when it's on someone else; optionally your % too.
+- **Tank:** one glow while you hold aggro, another (flashing) plus a "!" when it's on someone else.
 - **Not the tank:** safe while the tank has it, close when you near the warning %, on you when you pull it. Plus your threat % in a small box left of the nameplate.
 - **Every glow is yours to tune:** color, on/off, flash, strength and flash interval.
 - **Pet tanking:** follows your Voidwalker or other pet, and warns when you're catching up.
