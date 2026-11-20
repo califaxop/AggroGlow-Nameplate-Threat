@@ -1,4 +1,4 @@
--- Aggro Glow: shared namespace, settings and helpers.
+-- Holdfast: shared namespace, settings and helpers.
 local ADDON, ns = ...
 ns.name = ADDON
 
@@ -53,12 +53,12 @@ end
 ns.Copy = Copy
 
 ns.debug = false
-function ns.Print(...) print("|cffff7744Aggro Glow:|r", ...) end
-function ns.Dbg(...) if ns.debug then print("|cffff7744AG|r", ...) end end
+function ns.Print(...) print("|cffff7744Holdfast:|r", ...) end
+function ns.Dbg(...) if ns.debug then print("|cffff7744HF|r", ...) end end
 
 function ns.LoadDB()
-  AggroGlowDB = AggroGlowDB or {}
-  local db = AggroGlowDB
+  HoldfastDB = HoldfastDB or {}
+  local db = HoldfastDB
   local v = db.version
   if v ~= 3 and v ~= 4 and v ~= 5 then wipe(db) end -- older designs: start fresh
   if v == 3 and db.colors then
@@ -110,6 +110,6 @@ function ns.LoadDB()
 end
 
 function ns.ResetDB()
-  wipe(AggroGlowDB)
+  wipe(HoldfastDB)
   ns.LoadDB()
 end

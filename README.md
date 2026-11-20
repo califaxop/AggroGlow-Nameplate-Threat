@@ -1,4 +1,4 @@
-# AggroGlow: Nameplate Threat
+# Holdfast: Nameplate Threat
 
 **See who has aggro, right on the enemy's nameplate.**
 
@@ -15,14 +15,14 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 
 ## Quick start
 1. Turn on enemy nameplates (default key **V**).
-2. Type `/ag` and check **My role** and **Whose aggro to show**.
+2. Type `/hf` and check **My role** and **Whose aggro to show**.
 3. Use the **Preview** buttons on your target to tune the look.
 
 ## Commands
 | Command | Does |
 |---|---|
-| `/ag` | Open settings |
-| `/ag debug` | Show what threat data the game gives right now |
+| `/hf` | Open settings |
+| `/hf debug` | Show what threat data the game gives right now |
 
 ## Good to know
 - In a group the game hides threat values, so your % comes from the enemy's tooltip: it shows on enemies you have threat on.
@@ -30,9 +30,10 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
 ## Feedback
-Found a bug or have an idea? [Open an issue](https://github.com/califaxop/aggroglow-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
+Found a bug or have an idea? [Open an issue](https://github.com/califaxop/holdfast-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
 ## Recent changes
+- **4.0.0:** AggroGlow is now **Holdfast** (another addon shared the old name and folder). New folder and commands (`/hf`); your settings start fresh once. Remove the old AggroGlow folder if it's still there.
 - **3.9.1:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.
 - **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100%, now in a small XP Planner-style box left of the nameplate; "!" (a tinted quest icon) replaces the % at 100%, and marks lost aggro for tanks.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.

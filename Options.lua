@@ -1,4 +1,4 @@
--- Aggro Glow: settings window (/ag, or Esc > Options > AddOns > Aggro Glow), drawn in the same
+-- Holdfast: settings window (/hf, or Esc > Options > AddOns > Holdfast), drawn in the same
 -- style as XP Planner and Spell Glow (see UI.lua).
 local _, ns = ...
 local UI = ns.UI
@@ -84,7 +84,7 @@ local function BuildPanel(panel)
   local function track(w) refreshers[#refreshers + 1] = w; return w end
   local function at(w, x, y) w:SetPoint("TOPLEFT", x, y); return w end
 
-  local title = at(UI.Text(panel, "title", "Aggro Glow"), 26, -20)
+  local title = at(UI.Text(panel, "title", "Holdfast"), 26, -20)
   UI.Text(panel, "note", "Threat glows on enemy nameplates."):SetPoint("LEFT", title, "RIGHT", 10, -1)
 
   -- Whose aggro ------------------------------------------------------------
@@ -227,10 +227,10 @@ local function BuildPanel(panel)
     Changed()
   end), 26, y - 40)
   local fb = UI.Button(panel, "Report a bug / suggest", 160, function()
-    UI.ShowLink("AggroGlowLinkWindow", "AggroGlow: bugs and ideas", "https://github.com/califaxop/aggroglow-nameplate-threat/issues/new/choose")
+    UI.ShowLink("HoldfastLinkWindow", "Holdfast: bugs and ideas", "https://github.com/califaxop/holdfast-nameplate-threat/issues/new/choose")
   end)
   fb:SetPoint("LEFT", reset, "RIGHT", 8, 0)
-  local hint = UI.Text(panel, "note", "/ag debug: threat data")
+  local hint = UI.Text(panel, "note", "/hf debug: threat data")
   hint:SetPoint("LEFT", fb, "RIGHT", 10, 0)
 
   panel:HookScript("OnShow", function() for _, w in ipairs(refreshers) do w.Refresh() end end)
@@ -239,17 +239,17 @@ local function BuildPanel(panel)
 end
 
 ---------------------------------------------------------------------------
--- Esc > Options > AddOns entry, and the /ag window
+-- Esc > Options > AddOns entry, and the /hf window
 ---------------------------------------------------------------------------
 local window
 
 function ns.CreateOptions()
-  local p = CreateFrame("Frame"); p.name = "Aggro Glow"
+  local p = CreateFrame("Frame"); p.name = "Holdfast"
   pcall(function()
     local t = p:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    t:SetPoint("TOPLEFT", 16, -16); t:SetText("Aggro Glow")
+    t:SetPoint("TOPLEFT", 16, -16); t:SetText("Holdfast")
     local b = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-    b:SetSize(200, 24); b:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -12); b:SetText("Open Aggro Glow settings")
+    b:SetSize(200, 24); b:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -12); b:SetText("Open Holdfast settings")
     b:SetScript("OnClick", function()
       if SettingsPanel and SettingsPanel.Close then pcall(SettingsPanel.Close, SettingsPanel, true) end
       if not (window and window:IsShown()) then ns.OpenOptions() end
@@ -264,7 +264,7 @@ end
 
 function ns.OpenOptions()
   if not window then
-    window = UI.Window("AggroGlowOptionsWindow", 472, 600)
+    window = UI.Window("HoldfastOptionsWindow", 472, 600)
     window:SetPoint("CENTER")
     local ok, e = pcall(BuildPanel, window)
     if not ok then window:Hide(); window = nil; ns.Print("settings failed: " .. tostring(e)); return end

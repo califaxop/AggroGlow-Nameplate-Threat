@@ -41,7 +41,7 @@ ev:SetScript("OnEvent", function(_, event, unit)
       ev:RegisterEvent(e)
     end
     C_Timer.NewTicker(0.25, UpdateAll) -- safety net for missed updates
-    ns.Print("loaded. Type |cffffff00/ag|r for commands.")
+    ns.Print("loaded. Type |cffffff00/hf|r for commands.")
   elseif event == "NAME_PLATE_UNIT_ADDED" then
     R.Add(unit); UpdateUnit(unit)
   elseif event == "NAME_PLATE_UNIT_REMOVED" then
@@ -60,9 +60,9 @@ end)
 ---------------------------------------------------------------------------
 local TOGGLES = { icon = "showIcon", percent = "showPercent" }
 
-SLASH_AGGROGLOW1 = "/ag"
-SLASH_AGGROGLOW2 = "/aggroglow"
-SlashCmdList.AGGROGLOW = function(msg)
+SLASH_HOLDFAST1 = "/hf"
+SLASH_HOLDFAST2 = "/holdfast"
+SlashCmdList.HOLDFAST = function(msg)
   local cmd, arg = (msg or ""):lower():match("^(%S*)%s*(.-)$")
   local db = ns.db
   if cmd == "" or cmd == "config" or cmd == "options" then
@@ -140,7 +140,7 @@ SlashCmdList.AGGROGLOW = function(msg)
         end
       end
     else
-      print("  on screen: no tooltip shown (make a macro with /ag tip and press it while hovering an enemy)")
+      print("  on screen: no tooltip shown (make a macro with /hf tip and press it while hovering an enemy)")
     end
     return
   elseif cmd == "debug" then
@@ -167,7 +167,7 @@ SlashCmdList.AGGROGLOW = function(msg)
         "| hidden threat % checks:", ns.curveState)
     end
   else
-    ns.Print("/ag (settings)  -  /ag icon | percent | aggro  -  /ag debug  -  /ag tank")
+    ns.Print("/hf (settings)  -  /hf icon | percent | aggro  -  /hf debug  -  /hf tank")
     return
   end
   UpdateAll()

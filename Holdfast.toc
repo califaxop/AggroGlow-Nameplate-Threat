@@ -1,11 +1,11 @@
 ## Interface: 16001
-## Title: Aggro Glow
+## Title: Holdfast
 ## Notes: Multi-target threat tracker. Adds a glow to enemy nameplates you don't have aggro on.
-## IconTexture: Interface\AddOns\AggroGlow\media\Logo
+## IconTexture: Interface\AddOns\Holdfast\media\Logo
 ## Author: You
-## Version: 3.9.1
+## Version: 4.0.0
 ## X-Curse-Project-ID: 1811726
-## SavedVariables: AggroGlowDB
+## SavedVariables: HoldfastDB
 
 Core.lua
 UnitRegistry.lua
