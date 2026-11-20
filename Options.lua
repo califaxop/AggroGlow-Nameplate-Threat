@@ -221,13 +221,17 @@ local function BuildPanel(panel)
   end
   panel:HookScript("OnHide", function() if ns.preview then SetPreview(ns.preview) end end)
 
-  local reset = at(UI.Button(panel, "Reset to defaults", 140, function()
+  local reset = at(UI.Button(panel, "Reset to defaults", 130, function()
     ns.ResetDB(); UI.Restyle()
     for _, w in ipairs(refreshers) do w.Refresh() end
     Changed()
   end), 26, y - 40)
-  local hint = UI.Text(panel, "note", "/ag debug: what threat data the game gives.")
-  hint:SetPoint("LEFT", reset, "RIGHT", 12, 0)
+  local fb = UI.Button(panel, "Report a bug / suggest", 160, function()
+    UI.ShowLink("AggroGlowLinkWindow", "AggroGlow: bugs and ideas", "https://github.com/califaxop/aggroglow-nameplate-threat/issues/new/choose")
+  end)
+  fb:SetPoint("LEFT", reset, "RIGHT", 8, 0)
+  local hint = UI.Text(panel, "note", "/ag debug: threat data")
+  hint:SetPoint("LEFT", fb, "RIGHT", 10, 0)
 
   panel:HookScript("OnShow", function() for _, w in ipairs(refreshers) do w.Refresh() end end)
   panel.height = -(y - 40 - 22 - 24)

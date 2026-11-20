@@ -29,7 +29,11 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 - Tanks see holding / lost only: the game doesn't let addons see a party member closing in.
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
+## Feedback
+Found a bug or have an idea? [Open an issue](https://github.com/califaxop/aggroglow-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
+
 ## Recent changes
+- **3.9.1:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.
 - **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100%, now in a small XP Planner-style box left of the nameplate; "!" (a tinted quest icon) replaces the % at 100%, and marks lost aggro for tanks.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.
 - **3.8.0:** Separate glows for tank and not-the-tank, with a My role setting.
