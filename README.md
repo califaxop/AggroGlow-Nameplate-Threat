@@ -33,7 +33,8 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/holdfast-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
 ## Recent changes
-- **4.0.0:** AggroGlow is now **Holdfast** (another addon shared the old name and folder). New folder and commands (`/hf`); your settings start fresh once. The CurseForge app removes the old AggroGlow folder for you (manual installs: delete it yourself).
+- **4.0.1:** The "Report a bug / suggest" link box is solid now and stays put over the settings window until you close it.
+- **4.0.0:** AggroGlow is now **Holdfast** (another addon shared the old name and folder). New folder and commands (`/hf`); your settings start fresh once. Remove the old AggroGlow folder if it's still there.
 - **3.9.1:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.
 - **3.9.0:** Simpler glows: holding / lost for tanks; safe / close / on you otherwise. Flash interval per glow; % for non-tanks, capped at 100%, now in a small XP Planner-style box left of the nameplate; "!" (a tinted quest icon) replaces the % at 100%, and marks lost aggro for tanks.
 - **3.8.1:** Role and pet settings no longer interfere; no group role set acts like solo.

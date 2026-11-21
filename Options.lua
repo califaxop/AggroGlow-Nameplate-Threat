@@ -266,6 +266,7 @@ function ns.OpenOptions()
   if not window then
     window = UI.Window("HoldfastOptionsWindow", 472, 600)
     window:SetPoint("CENTER")
+  UI.SetHost(window) -- pop-ups (the bug / idea link) sit over this window
     local ok, e = pcall(BuildPanel, window)
     if not ok then window:Hide(); window = nil; ns.Print("settings failed: " .. tostring(e)); return end
     window:SetHeight(window.height or 600)
