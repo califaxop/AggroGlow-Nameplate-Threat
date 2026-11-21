@@ -95,6 +95,19 @@ end
 local DIALOG_BG = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark"
 local FLARE_BRONZE = { 0.65, 0.49, 0.27 }
 local PLAIN_BORDER = { 0.86, 0.66, 0.36 } -- bronze, on the game's tooltip border
+-- Nameplates move in fractions of a pixel, and Blizzard draws the health bar without snapping
+-- to the pixel grid. Ours must not snap either, or the glow and the % box jump a pixel at a time
+-- while the bar glides, and seem to shake. (Fonts can't be set; they're fine.)
+local function NoSnap(frame)
+  for _, r in ipairs({ frame:GetRegions() }) do
+    if r.SetSnapToPixelGrid then
+      pcall(r.SetSnapToPixelGrid, r, false)
+      if r.SetTexelSnappingBias then pcall(r.SetTexelSnappingBias, r, 0) end
+    end
+  end
+  for _, c in ipairs({ frame:GetChildren() }) do NoSnap(c) end
+end
+
 local function StyleBox(b)
   local a = ns.db.percentBgAlpha or 0.8
   local edge = ns.UI and ns.UI.FlareBorder and ns.UI.FlareBorder()
@@ -111,6 +124,7 @@ local function StyleBox(b)
     b:SetBackdropColor(0, 0, 0, a)
     b:SetBackdropBorderColor(PLAIN_BORDER[1], PLAIN_BORDER[2], PLAIN_BORDER[3], 1)
   end
+  NoSnap(b) -- the backdrop's pieces are made by SetBackdrop
 end
 
 -- the "!": the game's quest-available icon, tinted to the glow's colour
@@ -176,7 +190,9 @@ local MAX_GATES = 5 -- party members + pet
 
 local function Create(plate)
   local bar = HealthBarOf(plate)
-  local f = CreateFrame("Frame", nil, plate)
+  -- on the plate's own unit frame (the bar's parent chain), so it moves and scales with the bar
+  -- exactly; never anchored to the plate's base frame
+  local f = CreateFrame("Frame", nil, plate.UnitFrame or plate)
   f:SetFrameLevel(bar:GetFrameLevel() + 2) -- just above Blizzard's bar/border
 
   f:SetAllPoints(bar)
@@ -209,6 +225,7 @@ local function Create(plate)
 
 
   f.pct:Hide()
+  NoSnap(f)
   return f
 end
 
