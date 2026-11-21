@@ -3,7 +3,7 @@
 ## Notes: Multi-target threat tracker. Adds a glow to enemy nameplates you don't have aggro on.
 ## IconTexture: Interface\AddOns\Holdfast\media\Logo
 ## Author: You
-## Version: 4.0.2
+## Version: 4.0.3
 ## X-Curse-Project-ID: 1811726
 ## SavedVariables: HoldfastDB
 

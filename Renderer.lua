@@ -94,7 +94,7 @@ end
 -- frame border; without, a dark fill with a thin brown border. Background opacity is a setting.
 local DIALOG_BG = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark"
 local FLARE_BRONZE = { 0.65, 0.49, 0.27 }
-local PLAIN_BORDER = { 0.40, 0.33, 0.22 }
+local PLAIN_BORDER = { 0.86, 0.66, 0.36 } -- bronze, on the game's tooltip border
 local function StyleBox(b)
   local a = ns.db.percentBgAlpha or 0.8
   local edge = ns.UI and ns.UI.FlareBorder and ns.UI.FlareBorder()
@@ -106,8 +106,8 @@ local function StyleBox(b)
     b:SetBackdropColor(1, 1, 1, a)
     b:SetBackdropBorderColor(FLARE_BRONZE[1], FLARE_BRONZE[2], FLARE_BRONZE[3], 1)
   else
-    b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
-      edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 } })
+    b:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+      tile = true, tileSize = 8, edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
     b:SetBackdropColor(0, 0, 0, a)
     b:SetBackdropBorderColor(PLAIN_BORDER[1], PLAIN_BORDER[2], PLAIN_BORDER[3], 1)
   end
