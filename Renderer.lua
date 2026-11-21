@@ -92,9 +92,8 @@ end
 -- are hidden); only the inner frame flashes, so the two never fight each other.
 -- The % box: XP Planner's tracker look. With FlareUI, its dark dialog background and bronze
 -- frame border; without, a dark fill with a thin brown border. Background opacity is a setting.
-local DIALOG_BG = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark"
-local FLARE_BRONZE = { 0.65, 0.49, 0.27 }
-local PLAIN_BORDER = { 0.86, 0.66, 0.36 } -- bronze, on the game's tooltip border
+-- the % box's border: the bronze of the frames' borders, as a solid colour (see StyleBox)
+local BOX_BORDER = { 0.65, 0.49, 0.27 }
 -- Nameplates move in fractions of a pixel, and Blizzard draws the health bar without snapping
 -- to the pixel grid. Ours must not snap either, or the glow and the % box jump a pixel at a time
 -- while the bar glides, and seem to shake. (Fonts can't be set; they're fine.)
@@ -110,20 +109,16 @@ end
 
 local function StyleBox(b)
   local a = ns.db.percentBgAlpha or 0.8
-  local edge = ns.UI and ns.UI.FlareBorder and ns.UI.FlareBorder()
-  local key = tostring(edge) .. a
+  local key = "solid" .. a
   if b.styleKey == key then return end
   b.styleKey = key
-  if edge then
-    b:SetBackdrop({ bgFile = DIALOG_BG, edgeFile = edge, edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
-    b:SetBackdropColor(1, 1, 1, a)
-    b:SetBackdropBorderColor(FLARE_BRONZE[1], FLARE_BRONZE[2], FLARE_BRONZE[3], 1)
-  else
-    b:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-      tile = true, tileSize = 8, edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
-    b:SetBackdropColor(0, 0, 0, a)
-    b:SetBackdropBorderColor(PLAIN_BORDER[1], PLAIN_BORDER[2], PLAIN_BORDER[3], 1)
-  end
+  -- A plain one-colour line, not the tooltip / FlareUI border art: on a box this small that art is
+  -- shrunk to a few pixels, and as the plate glides between pixels the game samples its detail at a
+  -- different spot each frame, so it shimmers and seems to change colour. A solid line can't.
+  b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
+    edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 } })
+  b:SetBackdropColor(0, 0, 0, a)
+  b:SetBackdropBorderColor(BOX_BORDER[1], BOX_BORDER[2], BOX_BORDER[3], 1)
   NoSnap(b) -- the backdrop's pieces are made by SetBackdrop
 end
 
