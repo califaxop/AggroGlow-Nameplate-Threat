@@ -29,6 +29,9 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 - Tanks see holding / lost only: the game doesn't let addons see a party member closing in.
 - With a pet tanking and threat hidden, "pet has it" vs "doesn't" comes from the game's hidden flag.
 
+## Updates
+New versions come out every **Wednesday at 12:00 UTC** (8 PM Philippine time, 8 AM US Eastern). Urgent fixes ship sooner.
+
 ## Feedback
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/holdfast-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
