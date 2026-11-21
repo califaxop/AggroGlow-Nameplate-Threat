@@ -95,11 +95,14 @@ end
 -- Nameplates move in fractions of a pixel, and Blizzard draws the health bar without snapping
 -- to the pixel grid. Ours must not snap either, or the glow and the % box jump a pixel at a time
 -- while the bar glides, and seem to shake. (Fonts can't be set; they're fine.)
+-- Art with fine detail (the "!") keeps the game's texel snapping, so its edges stay crisp; only
+-- its position glides. Flat art (glows, bars) is drawn fully smooth, as Blizzard draws its bars.
+local crisp = setmetatable({}, { __mode = "k" })
 local function NoSnap(frame)
   for _, r in ipairs({ frame:GetRegions() }) do
     if r.SetSnapToPixelGrid then
       pcall(r.SetSnapToPixelGrid, r, false)
-      if r.SetTexelSnappingBias then pcall(r.SetTexelSnappingBias, r, 0) end
+      if r.SetTexelSnappingBias and not crisp[r] then pcall(r.SetTexelSnappingBias, r, 0) end
     end
   end
   for _, c in ipairs({ frame:GetChildren() }) do NoSnap(c) end
@@ -144,7 +147,13 @@ local function StyleBox(b)
 end
 
 -- the "!": the game's quest-available icon, tinted to the glow's colour
+-- The "!": the modern map's available-quest icon (atlas QuestNormal: sharper art with a dark
+-- outline), or the old gossip icon on a client without it.
+local QUEST_ATLAS = "QuestNormal"
 local QUEST_ICON = "Interface\\GossipFrame\\AvailableQuestIcon"
+local function SetQuestArt(t)
+  if not (pcall(t.SetAtlas, t, QUEST_ATLAS, false) and t:GetAtlas()) then t:SetTexture(QUEST_ICON) end
+end
 
 local function MakeFlash(f, bar)
   local holder = CreateFrame("Frame", nil, f)
@@ -162,8 +171,16 @@ local function MakeFlash(f, bar)
   top:SetAllPoints(); top:SetFrameLevel(bar:GetFrameLevel() + TEXT_LEVEL)
   local icon = top:CreateTexture(nil, "OVERLAY")
   icon:SetSize(18, 18)
-  icon:SetTexture(QUEST_ICON)
+  SetQuestArt(icon)
   icon:SetDesaturated(true) -- grey, so the glow colour tints it cleanly
+  crisp[icon] = true
+  -- the same art again, added on top at part strength: the tint stays bright instead of dull
+  local shine = top:CreateTexture(nil, "OVERLAY", nil, 1)
+  shine:SetAllPoints(icon)
+  SetQuestArt(shine)
+  shine:SetDesaturated(true); shine:SetBlendMode("ADD"); shine:SetAlpha(0.45)
+  crisp[shine] = true
+  icon.shine = shine
   holder:Hide()
   return { holder = holder, glow = glow, anim = anim, alpha = a, icon = icon }
 end
@@ -250,6 +267,8 @@ local function StyleFlash(fl, c, alpha, speed, showIcon)
   TintGlow(fl.glow, c, alpha)
   fl.icon:SetVertexColor(c[1], c[2], c[3])
   fl.icon:SetShown(showIcon)
+  fl.icon.shine:SetVertexColor(c[1], c[2], c[3])
+  fl.icon.shine:SetShown(showIcon)
   if fl.alpha:GetDuration() ~= speed then fl.alpha:SetDuration(speed) end
 end
 
