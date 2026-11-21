@@ -92,8 +92,6 @@ end
 -- are hidden); only the inner frame flashes, so the two never fight each other.
 -- The % box: XP Planner's tracker look. With FlareUI, its dark dialog background and bronze
 -- frame border; without, a dark fill with a thin brown border. Background opacity is a setting.
--- the % box's border: the bronze of the frames' borders, as a solid colour (see StyleBox)
-local BOX_BORDER = { 0.65, 0.49, 0.27 }
 -- Nameplates move in fractions of a pixel, and Blizzard draws the health bar without snapping
 -- to the pixel grid. Ours must not snap either, or the glow and the % box jump a pixel at a time
 -- while the bar glides, and seem to shake. (Fonts can't be set; they're fine.)
@@ -107,19 +105,42 @@ local function NoSnap(frame)
   for _, c in ipairs({ frame:GetChildren() }) do NoSnap(c) end
 end
 
+-- The % box wears the same art as the nameplate's level box on the other side of the bar
+-- (Forever's NameplateLevelFrame: atlas ui-hud-nameplates-levelindicator, and the yellow
+-- ui-hud-nameplates-levelindicator-rectangle-selected around it while the unit is your target).
+-- A client without that art gets the game's tooltip border instead.
+local LEVEL_ATLAS = "ui-hud-nameplates-levelindicator"
+local LEVEL_SELECTED_ATLAS = "ui-hud-nameplates-levelindicator-rectangle-selected"
+local BOX_BORDER = { 0.86, 0.66, 0.36 } -- the fallback border's bronze (on grey art, so a bit brighter)
+local boxes = setmetatable({}, { __mode = "k" }) -- [box frame] = { art, selected, hasLevelArt, key }
 local function StyleBox(b)
   local a = ns.db.percentBgAlpha or 0.8
-  local key = "solid" .. a
-  if b.styleKey == key then return end
-  b.styleKey = key
-  -- A plain one-colour line, not the tooltip / FlareUI border art: on a box this small that art is
-  -- shrunk to a few pixels, and as the plate glides between pixels the game samples its detail at a
-  -- different spot each frame, so it shimmers and seems to change colour. A solid line can't.
-  b:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
-    edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 } })
-  b:SetBackdropColor(0, 0, 0, a)
-  b:SetBackdropBorderColor(BOX_BORDER[1], BOX_BORDER[2], BOX_BORDER[3], 1)
-  NoSnap(b) -- the backdrop's pieces are made by SetBackdrop
+  local x = boxes[b]
+  if not x then
+    x = {}
+    x.art = b:CreateTexture(nil, "BACKGROUND")
+    x.art:SetAllPoints()
+    x.hasLevelArt = pcall(x.art.SetAtlas, x.art, LEVEL_ATLAS, false) and x.art:GetAtlas() ~= nil
+    local sel = b:CreateTexture(nil, "OVERLAY")
+    sel:SetPoint("TOPLEFT", -3, 3); sel:SetPoint("BOTTOMRIGHT", 3, -4) -- as Blizzard places it
+    if pcall(sel.SetAtlas, sel, LEVEL_SELECTED_ATLAS, false) and sel:GetAtlas() then x.selected = sel else sel:Hide() end
+    if x.selected then x.selected:Hide() end
+    boxes[b] = x
+  end
+  local key = tostring(x.hasLevelArt) .. a
+  if x.key == key then return end
+  x.key = key
+  if x.hasLevelArt then
+    x.art:Show(); x.art:SetAlpha(a)
+    b:SetBackdrop(nil)
+  else
+    x.art:Hide()
+    b:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+      tile = true, tileSize = 8, edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
+    b:SetBackdropColor(0, 0, 0, a)
+    b:SetBackdropBorderColor(BOX_BORDER[1], BOX_BORDER[2], BOX_BORDER[3], 1)
+  end
+  -- (no NoSnap here: drawn exactly as Blizzard draws the level box beside it, which holds still)
 end
 
 -- the "!": the game's quest-available icon, tinted to the glow's colour
@@ -215,6 +236,7 @@ local function Create(plate)
   f.pctBox = CreateFrame("Frame", nil, f.top, "BackdropTemplate") -- under the level box
   f.pctBox:SetSize(30, 15)
   f.pct = f.pctBox:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  if _G.SystemFont_NamePlateLevel then f.pct:SetFontObject(_G.SystemFont_NamePlateLevel) end -- the level's font
   f.pct:SetPoint("CENTER", 0, 0)
   f.bar = bar
 
@@ -263,7 +285,9 @@ local function PlaceText(f, qicon)
   if f.placedKey == key then return end
   f.placedKey = key
   f.pctBox:ClearAllPoints()
-  f.pctBox:SetPoint("RIGHT", f.bar, "LEFT", -f.textX, 0)
+  -- as tall as the level box on the right: 3 px above the bar to 2 px below it
+  f.pctBox:SetPoint("TOPRIGHT", f.bar, "TOPLEFT", -f.textX, 3)
+  f.pctBox:SetPoint("BOTTOMRIGHT", f.bar, "BOTTOMLEFT", -f.textX, -2)
   f.iconKey = nil -- the "!" follows (see PlaceIcons)
 end
 
@@ -320,7 +344,7 @@ local function HideAll(f)
 end
 
 local Render
-function V.Render(plate, state)
+function V.Render(plate, state, unit)
   Render(plate, state)
   local f = plate and indicators[plate]
   if not f then return end
@@ -330,7 +354,14 @@ function V.Render(plate, state)
   PlaceIcons(f, shown)
   if shown then
     local ok, w = pcall(f.pct.GetStringWidth, f.pct)
-    f.pctBox:SetWidth(math.max(22, ((ok and type(w) == "number") and w or 20) + 8))
+    -- at least the level box's width (Blizzard's 28), wider for "100%"
+    f.pctBox:SetWidth(math.max(28, ((ok and type(w) == "number" and not isSecret(w)) and w or 20) + 10))
+    -- the yellow outline while it's your target, like the level box
+    local x = boxes[f.pctBox]
+    if x and x.selected then
+      local okT, isT = pcall(UnitIsUnit, unit or "none", "target")
+      x.selected:SetShown(okT and not isSecret(isT) and isT and true or false)
+    end
   end
 end
 

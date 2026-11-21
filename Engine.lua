@@ -16,7 +16,7 @@ local function UpdateUnit(unit)
     local isTarget = UnitIsUnit(unit, "target")
     if ns.Readable(isTarget) and isTarget then st = { kind = ns.preview, pct = 42, closest = (ns.preview == "secure") and 35 or 86 } end
   end
-  V.Render(plate, st)
+  V.Render(plate, st, unit)
 end
 
 local function UpdateAll()
