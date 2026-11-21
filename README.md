@@ -33,6 +33,7 @@ A clean glow around each enemy's nameplate shows your threat at a glance. Tanks 
 Found a bug or have an idea? [Open an issue](https://github.com/califaxop/holdfast-nameplate-threat/issues/new/choose): there's a short form for each. The settings window has a "Feedback" button with this link too.
 
 ## Recent changes
+- **4.0.2:** Lighter in group combat: bursts of threat updates are handled once per frame.
 - **4.0.1:** The "Report a bug / suggest" link box is solid now and stays put over the settings window until you close it.
 - **4.0.0:** AggroGlow is now **Holdfast** (another addon shared the old name and folder). New folder and commands (`/hf`); your settings start fresh once. Remove the old AggroGlow folder if it's still there.
 - **3.9.1:** New "Report a bug / suggest" button in the settings, linking to a short feedback form.

@@ -24,6 +24,14 @@ local function UpdateAll()
 end
 ns.UpdateAll = UpdateAll
 
+-- events that can fire many times a frame in group combat: one update next frame covers them all
+local queued = false
+local function UpdateAllSoon()
+  if queued then return end
+  queued = true
+  C_Timer.After(0, function() queued = false; UpdateAll() end)
+end
+
 S.onTransition = function(unit, old, new)
   ns.Dbg(unit, old.kind, "->", new.kind)
 end
@@ -51,7 +59,7 @@ ev:SetScript("OnEvent", function(_, event, unit)
   elseif event == "PLAYER_ENTERING_WORLD" then
     R.Scan(); UpdateAll()
   else
-    UpdateAll()
+    UpdateAllSoon()
   end
 end)
 
